@@ -4,7 +4,12 @@ public class PlayerController : MonoBehaviour
 {
     #region ïœêî
 
+    [SerializeField] Transform Camera;
     [SerializeField] float PlayerSpeed;
+    [SerializeField] float RotationSpeed;
+
+    Vector3 speed = Vector3.zero;
+    Vector3 rot = Vector3.zero;
 
     #endregion 
 
@@ -17,41 +22,57 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        var speed = Vector3.zero;
+        Move();
+        Rotation();
+        Camera.transform.position = transform.position;
+    }
+
+    void Move()
+    {
+        speed = Vector3.zero;
+        rot = Vector3.zero;
+
         if (Input.GetKey(KeyCode.W))
-        {
-            speed.z = PlayerSpeed;
+        {            
+            rot.y = 0;
+            MoveSet();
         }
         if (Input.GetKey(KeyCode.S))
         {
-            speed.z = -PlayerSpeed;
+            rot.y = 180;
+            MoveSet();
         }
         if (Input.GetKey(KeyCode.A))
         {
-            speed.z = -PlayerSpeed;
+            rot.y = -90;
+            MoveSet();
         }
         if (Input.GetKey(KeyCode.D))
         {
-            speed.z = PlayerSpeed;
+            rot.y = 90;
+            MoveSet();
+        }
+        transform.Translate(speed);
+    }
+
+    void MoveSet()
+    {
+        speed.z = PlayerSpeed;
+        transform.eulerAngles = Camera.transform.eulerAngles + rot;
+    }
+
+    void Rotation()
+    {
+        var speed = Vector3.zero;
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            speed.y = -RotationSpeed;
+        }
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            speed.y = RotationSpeed;
         }
 
-        transform.Translate(speed);
-
-        //if(Input.GetKey(KeyCode.W))
-        //{
-        //    transform.position += new Vector3(0.1f, 0.0f, 0.0f);
-        //}
-        //if (Input.GetKey(KeyCode.S))
-        //{
-        //    transform.position += new Vector3(-0.1f, 0.0f, 0.0f);
-        //}
-        //if (Input.GetKey(KeyCode.A))
-        //{
-        //    transform.position += new Vector3(0.0f, 0.0f, 0.1f);
-        //}
-        //if (Input.GetKey(KeyCode.D))
-        //{
-        //    transform.position += new Vector3(0.0f, 0.0f, -0.1f);
-        //}
+        Camera.transform.eulerAngles += speed;
     }
 }
