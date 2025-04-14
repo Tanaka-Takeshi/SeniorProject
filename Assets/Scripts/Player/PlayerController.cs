@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngineInternal;
 
 public class PlayerController : MonoBehaviour
 {
@@ -10,6 +11,10 @@ public class PlayerController : MonoBehaviour
 
     Vector3 speed = Vector3.zero;
     Vector3 rot = Vector3.zero;
+
+
+    [SerializeField] Animator PlayerAnimator;
+    bool isRun;
 
     #endregion 
 
@@ -31,6 +36,7 @@ public class PlayerController : MonoBehaviour
     {
         speed = Vector3.zero;
         rot = Vector3.zero;
+        isRun = false;
 
         if (Input.GetKey(KeyCode.W))
         {            
@@ -53,12 +59,14 @@ public class PlayerController : MonoBehaviour
             MoveSet();
         }
         transform.Translate(speed);
+        PlayerAnimator.SetBool("Run", isRun);
     }
 
     void MoveSet()
     {
         speed.z = PlayerSpeed;
         transform.eulerAngles = Camera.transform.eulerAngles + rot;
+        isRun = true;
     }
 
     void Rotation()
