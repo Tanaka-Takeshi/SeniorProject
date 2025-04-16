@@ -97,8 +97,9 @@ ModelImporter:
   assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
-  productId: 4696
-  packageName: Robot Kyle | URP
-  packageVersion: 4.0
+  productId: 196526
+  packageName: Starter Assets - ThirdPerson | Updates in new CharacterController
+    package
+  packageVersion: 1.1.5
   assetPath: Assets/UnityTechnologies/StarterAssets/Environment/Art/Models/Tunnel_Mesh.fbx
-  uploadId: 683309
+  uploadId: 691128
