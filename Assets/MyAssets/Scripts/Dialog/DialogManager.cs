@@ -6,9 +6,7 @@ using UnityEngine.SocialPlatforms.GameCenter;
 
 public class DialogManager : MonoBehaviour
 {
-    //[SerializeField] Camera mainCamera;     // メインカメラ情報
-    //[SerializeField] Camera dialogCamera;   // 会話用カメラ情報
-
+    #region 変数
     public static DialogManager Instance;
 
     [Header("UI")]
@@ -28,6 +26,14 @@ public class DialogManager : MonoBehaviour
     private Transform currentPlayer;                // プレイヤーの姿勢状態
     private Transform currentNPC;                   // NPCの位置状態
     private bool isDialogActive = false;            // 会話状態
+    #endregion
+
+    #region セッター、ゲッター
+    public bool IsDialogActive() { return isDialogActive; }
+
+    #endregion
+
+
 
     private void Awake()
     {
@@ -130,6 +136,9 @@ public class DialogManager : MonoBehaviour
 
     public void EndDialog()
     {
+
+        Debug.Log("EndDialog() が呼ばれました");
+
         // 会話用UIを非表示に、非会話中に
         dialogUI.SetActive(false);
         isDialogActive = false;

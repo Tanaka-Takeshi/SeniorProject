@@ -3,12 +3,15 @@ using UnityEngine.UI;
 
 public class Interact : MonoBehaviour
 {
+    #region 変数
     [SerializeField] GameObject enterUI;        // EnterキーのUI
-    public Dialog dialogData;         // セリフデータ
+                public Dialog dialogData;       // セリフデータ
 
     private bool isPlayerInRange = false;       // Player接触状態
+    private bool hasInteracted = false;         // 会話の完了状態
 
     private Transform playerTransform;          // プレイヤーの姿勢情報
+    #endregion
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -19,13 +22,18 @@ public class Interact : MonoBehaviour
          * for(メンバ != null){}と同じ動作
          */
         enterUI?.SetActive(false);          // 初期は非表示設定に
-        //dialogCacnvas?.SetActive(false);    // 初期は非表示設定に
-        //dialogCamera.enabled = false;       // 会話用カメラは初期状態でOFF設定に
-        //mainCamera.enabled = true;          // メインカメラは初期状態でON設定に
     }
 
     private void Update()
     {
+        // 会話中なら更新処理を行わない
+        if (DialogManager.Instance != null && DialogManager.Instance.IsDialogActive())
+            return;
+
+        // 一度会話したら処理しない
+        if (hasInteracted)
+            return;
+        
         // Player接触中で会話状態がTrueでEnterキーが押されたとき
         if(isPlayerInRange && Input.GetKeyDown(KeyCode.Return))
         {
@@ -33,6 +41,7 @@ public class Interact : MonoBehaviour
             {
                 DialogManager.Instance.StartDialog(dialogData, playerTransform, this.transform);  // 会話を開始する
                 enterUI?.SetActive(false);
+                hasInteracted = true;
             }
 
         }
@@ -56,6 +65,9 @@ public class Interact : MonoBehaviour
         {
             isPlayerInRange = false;   // Player接触判定をfalseに
             enterUI?.SetActive(false); // enterUIを不可視状態に
+
+            // 領域から出たら再度会話可能にリセット
+            hasInteracted = false;
         }
     }
 }
