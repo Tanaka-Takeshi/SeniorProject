@@ -109,8 +109,16 @@ public class DialogManager : MonoBehaviour
 
     public void DisplayNextSentence()
     {
+
+        Debug.Log("DisplayNextSentenceが呼び出されました");
+
+        Debug.Log("セリフキュー : " + sentences.Count);
+
         if (sentences.Count == 0)        // セリフキューが0のとき
         {
+
+            Debug.Log("→ セリフキューが0");
+
             // 会話終了
             EndDialog();
             return;
