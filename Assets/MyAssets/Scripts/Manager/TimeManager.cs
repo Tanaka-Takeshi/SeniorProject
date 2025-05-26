@@ -101,9 +101,9 @@ public class TimeManager : MonoBehaviour
         else CurrentTimeOfDay = TimeOfDay.Night;
 
         // ìÆçÏämîF
-        Debug.Log($"[GameTime] CurrentDateTime : {CurrentDateTime:yyyy/MM/dd HH:mm:ss}");
-        Debug.Log($"[GameTime] CurrentTime     : {CurrentTime:hh\\:mm\\:ss} (TotalHours = {CurrentTime.TotalHours:F2})");
-        Debug.Log($"[GameTime] DayCount        : {DayCount}");
-        Debug.Log($"[GameTime] TimeOfDay       : {CurrentTimeOfDay}");
+        //Debug.Log($"[GameTime] CurrentDateTime : {CurrentDateTime:yyyy/MM/dd HH:mm:ss}");
+        //Debug.Log($"[GameTime] CurrentTime     : {CurrentTime:hh\\:mm\\:ss} (TotalHours = {CurrentTime.TotalHours:F2})");
+        //Debug.Log($"[GameTime] DayCount        : {DayCount}");
+        //Debug.Log($"[GameTime] TimeOfDay       : {CurrentTimeOfDay}");
     }
 }
