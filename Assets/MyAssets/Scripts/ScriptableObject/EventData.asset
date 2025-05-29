@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1394e0020ee25ea4ba1ca6761b17f396, type: 3}
+  m_Name: EventData
+  m_EditorClassIdentifier: 
+  events:
+  - eventNo: 0
+    triggerZoneName: Area1
+    startObjectName: NPC1
+    startTiming: 00:Morning
+    endTiming: 01:14:00
+    isTriggered: 0
+    isEnded: 0
+    status: 0
+    startType: 0
+    startObject: {fileID: 0}
+    startDay: 1
+    startTimeOfDay: 1
+    endDay: 1
+  - eventNo: 2
+    triggerZoneName: Area2
+    startObjectName: NPC1
+    startTiming: 00:Evening
+    endTiming: 02:05:00
+    isTriggered: 0
+    isEnded: 0
+    status: 0
+    startType: 0
+    startObject: {fileID: 0}
+    startDay: 1
+    startTimeOfDay: 3
+    endDay: 2

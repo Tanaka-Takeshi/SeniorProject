@@ -32,7 +32,7 @@ public class EventData : ScriptableObject
 
     private void OnEnable()
     {
-        if (events != null) return;
+        if (events == null) return;
 
         foreach ( var entry in events)
         {
@@ -159,6 +159,15 @@ public class EventEntry
                 }
             }
         }
+
+        Debug.Log(
+        $"[EventEntry] No:{eventNo}  " +
+        $"startObject={(startObject != null ? startObject.name : "null")}  " +
+        $"startDay={startDay}  " +
+        $"startTimeOfDay={startTimeOfDay}  " +
+        $"endDay={endDay}  " +
+        $"endTime={endTime}"
+    );
     }
 
 }

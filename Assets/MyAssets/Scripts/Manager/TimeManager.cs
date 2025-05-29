@@ -5,11 +5,10 @@ using System.Security.Cryptography;
 public class TimeManager : MonoBehaviour
 {
     // 開始日時の設定
-    [Header("開始日")]
+    [Header("開始日時設定")]
     [SerializeField] private int startYear  = 1;
     [SerializeField] private int startMonth = 1;
     [SerializeField] private int startDay   = 1;
-    [Header("開始時間")]
     [SerializeField] private int startHour   = 0;
     [SerializeField] private int startMinute = 0;
     [SerializeField] private int startSecond = 0;
@@ -74,7 +73,9 @@ public class TimeManager : MonoBehaviour
         float secondsPerGameDay = dayLength * 60.0f;
 
         // 経過ゲーム内日数（開始日のサイクル数）
-        DayCount = Mathf.FloorToInt(timeCounter / secondsPerGameDay);
+        int elapsedDays = Mathf.FloorToInt(timeCounter / secondsPerGameDay);
+        // 開始日 + 経過日数
+        DayCount = startDate.Day + elapsedDays;
 
         // その日の進行割合（0～1）
         float dayProgress = (timeCounter % secondsPerGameDay) / secondsPerGameDay;
@@ -101,9 +102,9 @@ public class TimeManager : MonoBehaviour
         else CurrentTimeOfDay = TimeOfDay.Night;
 
         // 動作確認
-        //Debug.Log($"[GameTime] CurrentDateTime : {CurrentDateTime:yyyy/MM/dd HH:mm:ss}");
-        //Debug.Log($"[GameTime] CurrentTime     : {CurrentTime:hh\\:mm\\:ss} (TotalHours = {CurrentTime.TotalHours:F2})");
-        //Debug.Log($"[GameTime] DayCount        : {DayCount}");
-        //Debug.Log($"[GameTime] TimeOfDay       : {CurrentTimeOfDay}");
+        Debug.Log($"[GameTime] CurrentDateTime : {CurrentDateTime:yyyy/MM/dd HH:mm:ss}");
+        Debug.Log($"[GameTime] CurrentTime     : {CurrentTime:hh\\:mm\\:ss} (TotalHours = {CurrentTime.TotalHours:F2})");
+        Debug.Log($"[GameTime] DayCount        : {DayCount}");
+        Debug.Log($"[GameTime] TimeOfDay       : {CurrentTimeOfDay}");
     }
 }
