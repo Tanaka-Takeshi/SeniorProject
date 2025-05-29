@@ -15,12 +15,12 @@ MonoBehaviour:
   events:
   - eventNo: 0
     triggerZoneName: Area1
-    startObjectName: NPC1
-    startTiming: 00:Morning
+    startObjectName: HumanMale_Character_FREE
+    startTiming: 01:Morning
     endTiming: 01:14:00
     isTriggered: 0
     isEnded: 0
-    status: 0
+    status: 1
     startType: 0
     startObject: {fileID: 0}
     startDay: 1
@@ -28,8 +28,8 @@ MonoBehaviour:
     endDay: 1
   - eventNo: 2
     triggerZoneName: Area2
-    startObjectName: NPC1
-    startTiming: 00:Evening
+    startObjectName: HumanMale_Character_FREE
+    startTiming: 01:Evening
     endTiming: 02:05:00
     isTriggered: 0
     isEnded: 0

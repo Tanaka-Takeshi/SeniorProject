@@ -1496,10 +1496,10 @@ MonoBehaviour:
   startYear: 1
   startMonth: 1
   startDay: 1
-  startHour: 6
+  startHour: 2
   startMinute: 35
   startSecond: 0
-  dayLength: 30
+  dayLength: 10
 --- !u!4 &1073091608
 Transform:
   m_ObjectHideFlags: 0
