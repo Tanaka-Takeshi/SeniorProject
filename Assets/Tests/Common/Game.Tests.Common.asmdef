@@ -1,0 +1,16 @@
+{
+    "name": "Game.Tests.Common",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4c8f503a22c09634381d6d351daefeb8"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

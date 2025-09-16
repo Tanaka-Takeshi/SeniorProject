@@ -1,0 +1,19 @@
+{
+    "name": "Game.Tests.PlayMode",
+    "rootNamespace": "",
+    "references": [
+        "Game.Runtime",
+        "Game.Tests.Common"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

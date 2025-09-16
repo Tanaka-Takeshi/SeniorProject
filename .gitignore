@@ -72,3 +72,6 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+Assets/Fonts/GenShinGothic-Bold SDF.asset
+Assets/Fonts/GenShinGothic-Bold.ttf
+Assets/TextMesh Pro/Fonts/NotoSansJP-Regular SDF.asset

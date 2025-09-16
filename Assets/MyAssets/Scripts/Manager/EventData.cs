@@ -25,7 +25,7 @@ public enum StartType
 
 }
 
-[CreateAssetMenu(fileName = "EventData", menuName = "Scriptable Objects/EventData")]
+[CreateAssetMenu(fileName = "EventData_prev", menuName = "Scriptable Objects/EventData_prev")]
 public class EventData : ScriptableObject
 {
     public EventEntry[] events;
@@ -45,7 +45,7 @@ public class EventData : ScriptableObject
 public class EventEntry
 {
     // イベント番号
-    public int eventNo;
+    public float eventNo;
 
     // 開始場所
     public string triggerZoneName;

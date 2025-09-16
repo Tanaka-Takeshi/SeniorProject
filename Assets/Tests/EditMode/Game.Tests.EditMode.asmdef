@@ -1,0 +1,21 @@
+{
+    "name": "Game.Tests.EditMode",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4c8f503a22c09634381d6d351daefeb8",
+        "GUID:bf44543b7bb67044f95a720912056001"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
