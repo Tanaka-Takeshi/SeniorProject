@@ -6,7 +6,7 @@ public class SetAreaOnStart : MonoBehaviour
     [SerializeField] private SimpleLocationResolver locator;
     [SerializeField] private string areaId = "TestArea";
 
-    void start()
+    void Start()
     {
         if (locator) locator.SetArea(areaId);
     }

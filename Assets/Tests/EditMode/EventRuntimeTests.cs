@@ -8,13 +8,13 @@ using Game.Runtime;
 
 namespace Tests.EditMode
 {
-    // ƒeƒXƒg‚²‚Æ‚ÉU‚é•‘‚¢‚ğØ‚è‘Ö‚¦‚é‚½‚ß‚Ìƒ‚ƒbƒN
+    // ãƒ†ã‚¹ãƒˆã”ã¨ã«æŒ¯ã‚‹èˆã„ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹ãŸã‚ã®ãƒ¢ãƒƒã‚¯
     internal class FakeEvalContext : IEvalContext
     {
         public bool IsGloballyPaused { get; set; }
         public bool PolicyTreatStartOverAsExpired { get; set; }
 
-        // ƒtƒ‰ƒO‚ğØ‚è‘Ö‚¦‚Ä‘JˆÚ•ªŠò‚ğŒŸØ
+        // ãƒ•ãƒ©ã‚°ã‚’åˆ‡ã‚Šæ›¿ãˆã¦é·ç§»åˆ†å²ã‚’æ¤œè¨¼
         public bool depsSatisfied = true;
         public bool appearReached = true;
         public bool startDeadlineExceeded = false;
@@ -23,9 +23,9 @@ namespace Tests.EditMode
         public bool locationSatisfied = true;
         public bool interactionPossible = true;
 
-        // “ü—Íi‚±‚ÌƒtƒŒ[ƒ€‚Å‰Ÿ‰º‚³‚¹‚½‚¢‚Æ‚« true ‚É‚·‚éj
+        // å…¥åŠ›ï¼ˆã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§æŠ¼ä¸‹ã•ã›ãŸã„ã¨ã true ã«ã™ã‚‹ï¼‰
         public bool startInputReceived = false;
-        private bool _startConsumed = false; // ‚»‚ÌƒtƒŒ[ƒ€‚Å‚à‚¤Á”ï‚µ‚½‚©
+        private bool _startConsumed = false; // ãã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§ã‚‚ã†æ¶ˆè²»ã—ãŸã‹
 
         public bool DependenciesSatisfied(List<string> ids) => depsSatisfied;
         public bool NowReached(string gameDateTime) => appearReached;
@@ -35,7 +35,7 @@ namespace Tests.EditMode
         public bool LocationSatisfied(LocationRef loc) => locationSatisfied;
         public bool InteractionPossible(Game.Data.EventData data) => interactionPossible;
 
-        // šV‹KFÁ”ïŒ^“ü—Íi1ƒtƒŒ[ƒ€‚ÅÅ‰‚Ì1‰ñ‚¾‚¯ truej
+        // â˜…æ–°è¦ï¼šæ¶ˆè²»å‹å…¥åŠ›ï¼ˆ1ãƒ•ãƒ¬ãƒ¼ãƒ ã§æœ€åˆã®1å›ã ã‘ trueï¼‰
         public bool TryConsumeStartInput()
         {
             if (!startInputReceived || _startConsumed) return false;
@@ -43,17 +43,17 @@ namespace Tests.EditMode
             return true;
         }
 
-        // šŒİŠ·FŠù‘¶ƒeƒXƒg—pB“à•”‚ÅÁ”ïŒ^‚ğ—˜—p
+        // â˜…äº’æ›ï¼šæ—¢å­˜ãƒ†ã‚¹ãƒˆç”¨ã€‚å†…éƒ¨ã§æ¶ˆè²»å‹ã‚’åˆ©ç”¨
         public bool StartInputReceived() => TryConsumeStartInput();
 
-        // i”CˆÓjƒeƒXƒg•â•FŸƒtƒŒ[ƒ€‚Öi‚ß‚é‘O‚ÉŒÄ‚Ô‚Æˆµ‚¢‚â‚·‚¢
+        // ï¼ˆä»»æ„ï¼‰ãƒ†ã‚¹ãƒˆè£œåŠ©ï¼šæ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã¸é€²ã‚ã‚‹å‰ã«å‘¼ã¶ã¨æ‰±ã„ã‚„ã™ã„
         public void NextFrame()
         {
             startInputReceived = false;
             _startConsumed = false;
         }
 
-        // i”CˆÓj‚±‚ÌƒtƒŒ[ƒ€‚Å1‰ñ‚¾‚¯‰Ÿ‚·
+        // ï¼ˆä»»æ„ï¼‰ã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§1å›ã ã‘æŠ¼ã™
         public void PressOnceThisFrame()
         {
             startInputReceived = true;
@@ -88,7 +88,7 @@ namespace Tests.EditMode
             return so;
         }
 
-        // ƒeƒXƒg1FLocked ¨ Scheduled
+        // ãƒ†ã‚¹ãƒˆ1ï¼šLocked â†’ Scheduled
         [Test]
         public void Locked_to_Scheduled_When_Dependencies_Appear_Calendar_OK()
         {
@@ -110,11 +110,11 @@ namespace Tests.EditMode
             finally
             {
                 EventSignals.OnScheduled -= OnScheduled;
-                UnityEngine.Object.DestroyImmediate(data); // SO‘|œiEditMode)
+                UnityEngine.Object.DestroyImmediate(data); // SOæƒé™¤ï¼ˆEditMode)
             }
         }
 
-        // ƒeƒXƒg2FˆË‘¶–¢’B‚È‚ç Locked ‚Ì‚Ü‚Ü
+        // ãƒ†ã‚¹ãƒˆ2ï¼šä¾å­˜æœªé”ãªã‚‰ Locked ã®ã¾ã¾
         [Test]
         public void Remains_Locked_When_Dependency_Not_Satisfied()
         {
@@ -128,7 +128,7 @@ namespace Tests.EditMode
             UnityEngine.Object.DestroyImmediate(data);
         }
 
-        // ƒeƒXƒg3FScheduled ¨ Available
+        // ãƒ†ã‚¹ãƒˆ3ï¼šScheduled â†’ Available
         [Test]
         public void Scheduled_to_Available_When_Location_And_Interaction_Possible()
         {
@@ -136,7 +136,7 @@ namespace Tests.EditMode
             var rt = new EventRuntime(data);
             var ctx = new FakeEvalContext();
 
-            // Locked ¨ Scheduled
+            // Locked â†’ Scheduled
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Scheduled, rt.State);
 
@@ -160,7 +160,7 @@ namespace Tests.EditMode
             }
         }
 
-        // ƒeƒXƒg4FAvailable ¨ InProgress
+        // ãƒ†ã‚¹ãƒˆ4ï¼šAvailable â†’ InProgress
         [Test]
         public void Available_to_InProgress_On_Interact()
         {
@@ -191,7 +191,7 @@ namespace Tests.EditMode
             }
         }
 
-        // ƒeƒXƒg5FInProgress ¨ Completed
+        // ãƒ†ã‚¹ãƒˆ5ï¼šInProgress â†’ Completed
         [Test]
         public void InProgress_To_Completed_When_EndDeadline_And_Progress_Above_Threshold()
         {
@@ -225,7 +225,7 @@ namespace Tests.EditMode
             }
         }
 
-        // ƒeƒXƒg6FInProgress ¨ Failed
+        // ãƒ†ã‚¹ãƒˆ6ï¼šInProgress â†’ Failed
         [Test]
         public void InProgress_To_Failed_When_EndDeadline_And_Progress_Below_Threshold()
         {
@@ -259,36 +259,36 @@ namespace Tests.EditMode
             }
         }
 
-        // ƒeƒXƒg7FŠJnŠúŒÀ’´‰ß ¨ Failed orExpired
+        // ãƒ†ã‚¹ãƒˆ7ï¼šé–‹å§‹æœŸé™è¶…é â†’ Failed orExpired
         [Test]
         public void Scheduled_MissedStart_Becomes_Failed_Or_Expired_By_Policy()
         {
-            var data = MakeEventData(); // appearAt/startDeadline/endDeadline ‚ğ“KØ‚É‚Â EventData
+            var data = MakeEventData(); // appearAt/startDeadline/endDeadline ã‚’é©åˆ‡ã«æŒã¤ EventData
 
-            // 1) ‚Ü‚¸ Scheduled ‚Ö
+            // 1) ã¾ãš Scheduled ã¸
             var primeCtx = new FakeEvalContext
             {
                 depsSatisfied = true,
                 appearReached = true,
                 calendarAllowed = true,
-                locationSatisfied = false,   // š‚±‚Ì“_‚Å‚ÍêŠ‚É‚¢‚È‚¢iAvailable‚És‚©‚¹‚È‚¢j
+                locationSatisfied = false,   // â˜…ã“ã®æ™‚ç‚¹ã§ã¯å ´æ‰€ã«ã„ãªã„ï¼ˆAvailableã«è¡Œã‹ã›ãªã„ï¼‰
                 interactionPossible = false
             };
             var rt = new EventRuntime(data);
             rt.Evaluate(primeCtx); // Locked -> Scheduled
-            Assert.AreEqual(EventState.Scheduled, rt.State, "‘O’ñ: Scheduled ‚É“’B‚µ‚Ä‚¢‚é‚±‚Æ");
+            Assert.AreEqual(EventState.Scheduled, rt.State, "å‰æ: Scheduled ã«åˆ°é”ã—ã¦ã„ã‚‹ã“ã¨");
 
-            // ===== Failed(MissedStart) ƒpƒX =====
+            // ===== Failed(MissedStart) ãƒ‘ã‚¹ =====
             FailedReason? reason = null;
             void OnFailed(string id, FailedReason r) => reason = r;
             EventSignals.OnFailed += OnFailed;
 
             var ctxFailed = new FakeEvalContext
             {
-                // ŠúŒÀ’´‰ß‚ğÅ—Dæ‚ÅE‚í‚¹‚é
+                // æœŸé™è¶…éã‚’æœ€å„ªå…ˆã§æ‹¾ã‚ã›ã‚‹
                 startDeadlineExceeded = true,
                 PolicyTreatStartOverAsExpired = false,
-                // êŠ‚Íˆø‚«‘±‚«NGiAvailable‚És‚©‚¹‚È‚¢j
+                // å ´æ‰€ã¯å¼•ãç¶šãNGï¼ˆAvailableã«è¡Œã‹ã›ãªã„ï¼‰
                 locationSatisfied = false,
                 interactionPossible = false
             };
@@ -299,10 +299,10 @@ namespace Tests.EditMode
 
             EventSignals.OnFailed -= OnFailed;
 
-            // ===== Expired ƒpƒX =====
-            // V‹KƒCƒ“ƒXƒ^ƒ“ƒX‚ÅÄŒŸØ
+            // ===== Expired ãƒ‘ã‚¹ =====
+            // æ–°è¦ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã§å†æ¤œè¨¼
             rt = new EventRuntime(data);
-            rt.Evaluate(primeCtx); // Ä‚Ñ Scheduled
+            rt.Evaluate(primeCtx); // å†ã³ Scheduled
             Assert.AreEqual(EventState.Scheduled, rt.State);
 
             bool expired = false;
@@ -319,7 +319,7 @@ namespace Tests.EditMode
 
             rt.Evaluate(ctxExpired);
             Assert.AreEqual(EventState.Expired, rt.State);
-            Assert.IsTrue(expired, "Expired ƒVƒOƒiƒ‹‚ª”­‰Î‚µ‚Ä‚¢‚é‚±‚Æ");
+            Assert.IsTrue(expired, "Expired ã‚·ã‚°ãƒŠãƒ«ãŒç™ºç«ã—ã¦ã„ã‚‹ã“ã¨");
 
             EventSignals.OnExpired -= OnExpired;
 
@@ -327,7 +327,7 @@ namespace Tests.EditMode
         }
 
 
-        // ƒeƒXƒg8Fƒ^ƒCƒ}[“€Œ‹‚Ì‹“
+        // ãƒ†ã‚¹ãƒˆ8ï¼šã‚¿ã‚¤ãƒãƒ¼å‡çµã®æŒ™
         [Test]
         public void FreezeTimers_Stops_Evaluate_And_Raises_Signals()
         {
@@ -347,13 +347,13 @@ namespace Tests.EditMode
                 rt.FreezeTimers(true);
                 Assert.IsTrue(froze);
 
-                rt.Evaluate(ctx); // “€Œ‹’† ¨ •Ï‰»‚È‚µ
+                rt.Evaluate(ctx); // å‡çµä¸­ â†’ å¤‰åŒ–ãªã—
                 Assert.AreEqual(EventState.Locked, rt.State);
 
                 rt.FreezeTimers(false);
                 Assert.IsTrue(resumed);
 
-                rt.Evaluate(ctx); // ‰ğœŒã ¨ Scheduled ‚Ö
+                rt.Evaluate(ctx); // è§£é™¤å¾Œ â†’ Scheduled ã¸
                 Assert.AreEqual(EventState.Scheduled, rt.State);
             }
             finally

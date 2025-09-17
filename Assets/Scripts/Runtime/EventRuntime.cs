@@ -11,22 +11,22 @@ namespace Game.Runtime
         public FailedReason FailedReason { get; private set; } = FailedReason.None;
         public float Progress { get; private set; } = 0f;
 
-        // “à•”ƒ^ƒCƒ}[ic‚èŠÔ“™‚Í•K—v‚É‰‚¶‚ÄŠg’£j
+        // å†…éƒ¨ã‚¿ã‚¤ãƒãƒ¼ï¼ˆå‡çµä¸­ã¯è©•ä¾¡ã—ãªã„ï¼‰
         private bool _timerFrozen = false;
 
-        public EventRuntime(Game.Data.EventData data) {  Data = data; }
+        public EventRuntime(Game.Data.EventData data) { Data = data; }
 
         public void SetProgress(float value)
         {
-            Progress = UnityEngine.Mathf.Clamp01(value);
+            Progress = Mathf.Clamp01(value);
             EventSignals.RaiseProgress(Data.eventId, Progress);
         }
 
         public void FreezeTimers(bool frozen)
         {
-            if(_timerFrozen == frozen) return;
+            if (_timerFrozen == frozen) return;
             _timerFrozen = frozen;
-            if(frozen) EventSignals.RaiseTimerFrozen(Data.eventId);
+            if (frozen) EventSignals.RaiseTimerFrozen(Data.eventId);
             else EventSignals.RaiseTimerResumed(Data.eventId);
         }
 
@@ -37,56 +37,21 @@ namespace Game.Runtime
             switch (State)
             {
                 case EventState.Locked:
-                    if (ctx.DependenciesSatisfied(Data.dependencies) &&
-                        ctx.NowReached(Data.appearAt) &&
-                        ctx.CalendarAllowed(Data.weekdayRule))
                     {
-                        State = EventState.Scheduled;
-                        EventSignals.RaiseScheduled(Data.eventId);
-                    }
-                    break;
-
-                case EventState.Scheduled:
-                    // 1) ŠJnŠúŒÀ’´‰ß‚ğÅ—Dæ‚Å”»’è
-                    if (ctx.StartDeadlineExceeded(Data.startDeadline))
-                    {
-                        if (ctx.PolicyTreatStartOverAsExpired)
+                        // ä¾å­˜OK + æ™‚åˆ»åˆ°é” + ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼OK ã§ Scheduled
+                        if (ctx.DependenciesSatisfied(Data.dependencies) &&
+                            ctx.NowReached(Data.appearAt) &&
+                            ctx.CalendarAllowed(Data.weekdayRule))
                         {
-                            State = EventState.Expired;
-                            EventSignals.RaiseExpired(Data.eventId);
-                        }
-                        else
-                        {
-                            State = EventState.Failed;
-                            FailedReason = FailedReason.MissedStart;
-                            EventSignals.RaiseFailed(Data.eventId, FailedReason);
+                            State = EventState.Scheduled;
+                            EventSignals.RaiseScheduled(Data.eventId);
                         }
                         break;
                     }
 
-                    // 2) ŠúŒÀ“à‚Å‚ ‚ê‚Î Available ”»’è
-                    if (ctx.LocationSatisfied(Data.location) && ctx.InteractionPossible(Data))
+                case EventState.Scheduled:
                     {
-                        State = EventState.Available;
-                        EventSignals.RaiseAvailable(Data.eventId);
-                    }
-                    break;
-
-                case EventState.Available:
-                    {
-                        // requiresButtonPress=false ‚È‚ç©“®ŠJn / true ‚È‚çgÁ”ïŒ^h“ü—Í‚ÅŠJn
-                        bool shouldStart = Data.requiresButtonPress
-                            ? ctx.TryConsumeStartInput()
-                            : true;
-
-                        if (shouldStart)
-                        {
-                            State = EventState.InProgress;
-                            EventSignals.RaiseStarted(Data.eventId);
-                            break; // ŠJn‚ğ—DæF‚±‚ÌƒtƒŒ[ƒ€‚Í‚±‚±‚ÅI—¹
-                        }
-
-                        // ‚±‚ÌƒtƒŒ[ƒ€‚ÉŠJn‚µ‚È‚©‚Á‚½ê‡‚Ì‚İAŠJnŠúŒÀ’´‰ß‚ğƒ`ƒFƒbƒN
+                        // é–‹å§‹æœŸé™è¶…éã‚’æœ€å„ªå…ˆ
                         if (ctx.StartDeadlineExceeded(Data.startDeadline))
                         {
                             if (ctx.PolicyTreatStartOverAsExpired)
@@ -103,26 +68,73 @@ namespace Game.Runtime
                             break;
                         }
 
-                        // ‰½‚à‹N‚«‚È‚¯‚ê‚Î Available Œp‘±
+                        // â˜…æ–°ä»•æ§˜ï¼šæ™‚é–“ã ã‘ã§ Availableï¼ˆå ´æ‰€/å…¥åŠ›ã®å¯å¦ã¯è¦‹ãªã„ï¼‰
+                        State = EventState.Available;
+                        EventSignals.RaiseAvailable(Data.eventId);
+                        break;
+                    }
+
+                case EventState.Available:
+                    {
+                        // â˜…æ–°ä»•æ§˜ï¼šé–‹å§‹æ¡ä»¶ã¯ã€Œå ´æ‰€åˆ°é”ã€ã¾ãŸã¯ã€Œã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã€
+                        //   - å ´æ‰€åˆ°é”ã¯ Data.autoStartOnLocation ãŒ true ã®ã¨ãã®ã¿è¨±å¯
+                        //   - ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã¯ 1 ãƒ•ãƒ¬ãƒ¼ãƒ æ¶ˆè²»ï¼ˆTryConsumeStartInputï¼‰
+                        bool byLocation = Data.autoStartOnLocation && ctx.LocationSatisfied(Data.location);
+                        bool byInteract = ctx.TryConsumeStartInput();
+
+                        // ï¼ˆè£œè¶³ï¼‰requiresButtonPress ã¯äº’æ›ã®ãŸã‚æ®‹å­˜ã€‚
+                        //  ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆå¿…é ˆã®ã‚¤ãƒ™ãƒ³ãƒˆã«ã—ãŸã„å ´åˆã¯
+                        //  autoStartOnLocation=false ã«ã—ã¦ byLocation ã‚’ç„¡åŠ¹åŒ–ã—ã¦ãã ã•ã„ã€‚
+                        if (byLocation || byInteract)
+                        {
+                            State = EventState.InProgress;
+                            EventSignals.RaiseStarted(Data.eventId);
+                            break; // ã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã¯é–‹å§‹ã§çµ‚ãˆã‚‹
+                        }
+
+                        // é–‹å§‹ã—ãªã„ã¾ã¾é–‹å§‹æœŸé™ã‚’è¶…ãˆãŸã‚‰å¤±æ•—ï¼ˆã¾ãŸã¯Expiredãƒãƒªã‚·ãƒ¼ï¼‰
+                        if (ctx.StartDeadlineExceeded(Data.startDeadline))
+                        {
+                            if (ctx.PolicyTreatStartOverAsExpired)
+                            {
+                                State = EventState.Expired;
+                                EventSignals.RaiseExpired(Data.eventId);
+                            }
+                            else
+                            {
+                                State = EventState.Failed;
+                                FailedReason = FailedReason.MissedStart;
+                                EventSignals.RaiseFailed(Data.eventId, FailedReason);
+                            }
+                        }
                         break;
                     }
 
                 case EventState.InProgress:
-                    if (ctx.EndDeadlineReached(Data.endDeadline))
                     {
-                        if (Progress >= Data.altCompleteThreshold)
+                        // çµ‚äº†åˆ°é”æ™‚ã«é€²æ—ã§ Completed / Failed ã‚’åˆ†å²
+                        if (ctx.EndDeadlineReached(Data.endDeadline))
                         {
-                            State = EventState.Completed;
-                            EventSignals.RaiseCompleted(Data.eventId);
+                            if (Progress >= Data.altCompleteThreshold)
+                            {
+                                State = EventState.Completed;
+                                EventSignals.RaiseCompleted(Data.eventId);
+                            }
+                            else
+                            {
+                                State = EventState.Failed;
+                                FailedReason = FailedReason.MissedEndLowProgress;
+                                EventSignals.RaiseFailed(Data.eventId, FailedReason);
+                            }
                         }
-                        else
-                        {
-                            State = EventState.Failed;
-                            FailedReason = FailedReason.MissedEndLowProgress;
-                            EventSignals.RaiseFailed(Data.eventId, FailedReason);
-                        }
+                        break;
                     }
-                    // i’»XV‚ÍŠO•”‚©‚ç SetProgress() ‚ğŒÄ‚Ô
+
+                case EventState.Completed:
+                case EventState.Failed:
+                case EventState.Expired:
+                default:
+                    // ã‚¿ãƒ¼ãƒŸãƒŠãƒ«çŠ¶æ…‹
                     break;
             }
         }
@@ -134,8 +146,6 @@ namespace Game.Runtime
             EventSignals.RaiseFailed(Data.eventId, FailedReason);
         }
 
-
-
 #if UNITY_EDITOR
         public void RestoreForTest(Game.Events.EventState state, Game.Events.FailedReason failed, float progress01)
         {
@@ -146,7 +156,7 @@ namespace Game.Runtime
 #endif
     }
 
-    // Manager‚ª’ñ‹Ÿ‚·‚é•]‰¿ƒRƒ“ƒeƒLƒXƒgiÀ‘•‚ÍƒvƒƒWƒFƒNƒg‘¤j
+    // Manager ãŒæä¾›ã™ã‚‹è©•ä¾¡ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆï¼ˆæ—¢å­˜ãã®ã¾ã¾ï¼‰
     public interface IEvalContext
     {
         bool IsGloballyPaused { get; }
@@ -157,9 +167,8 @@ namespace Game.Runtime
         bool EndDeadlineReached(string gameDateTime);
         bool CalendarAllowed(Game.Events.WeekdayRule rule);
         bool LocationSatisfied(Game.Events.LocationRef loc);
-        bool InteractionPossible(Game.Data.EventData data);
-        bool StartInputReceived();
+        bool InteractionPossible(Game.Data.EventData data); // äº’æ›ã®ãŸã‚å­˜ç½®ï¼ˆæœªä½¿ç”¨ï¼‰
+        bool StartInputReceived();                           // äº’æ›ã®ãŸã‚å­˜ç½®ï¼ˆæœªä½¿ç”¨ï¼‰
         bool TryConsumeStartInput();
     }
-
 }

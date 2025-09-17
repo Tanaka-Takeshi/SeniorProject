@@ -9,20 +9,26 @@ namespace Game.Data
     public class EventData : ScriptableObject
     {
         [Header("Identity")]
-        public string eventId;                  // Í.ß(—áF2.1)
+        public string eventId;                  // ç« .ç¯€(ä¾‹ï¼š2.1)
         public Game.Events.EventType type = Game.Events.EventType.Sub;
 
-        [Header("Time window(Game DateTime")]
-        public string appearAt;                 // —á: "0002-12:00" (—ï‚Ìd—l‚É‡‚í‚¹‚Äƒp[ƒX)
-        public string startDeadline;            // —á: "0003-21:00"
-        public string endDeadline;              // —á: "0005-12:00" 
+        [Header("Time window(Game DateTime)")]
+        public string appearAt;                 // ä¾‹: "0002-12:00" (æš¦ã®ä»•æ§˜ã«åˆã‚ã›ã¦ãƒ‘ãƒ¼ã‚¹)
+        public string startDeadline;            // ä¾‹: "0003-21:00"
+        public string endDeadline;              // ä¾‹: "0005-12:00" 
 
         [Header("Location & Interaction")]
         public LocationRef location;
-        public bool requiresButtonPress = true;     // ‰Šúd—lFƒ{ƒ^ƒ“‰Ÿ‰º
+
+        [Tooltip("ãƒœã‚¿ãƒ³æŠ¼ä¸‹ã§é–‹å§‹å¯èƒ½ã«ã™ã‚‹ï¼ˆã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆï¼‰ã€‚trueã®ã¨ã TryConsumeStartInput() ã‚’é–‹å§‹ãƒˆãƒªã‚¬ã¨ã—ã¦è¦‹ã‚‹ã€‚")]
+        public bool requiresButtonPress = true;
+
+        [Header("Start Triggers (New)")]
+        [Tooltip("åˆ°é”ã—ãŸã‚‰è‡ªå‹•ã§é–‹å§‹ã—ã¦ã‚ˆã„ã‹ï¼ˆAvailableä¸­ã« LocationSatisfied(location) ã§å³Startï¼‰ã€‚")]
+        public bool autoStartOnLocation = true;    // â˜… æ–°ä»•æ§˜ï¼šå ´æ‰€åˆ°é”ã§ã‚‚é–‹å§‹ã§ãã‚‹
 
         [Header("Dependencies & Progress")]
-        public List<string> dependencies = new();   // ˆË‘¶ƒCƒxƒ“ƒgID
+        public List<string> dependencies = new();   // ä¾å­˜ã‚¤ãƒ™ãƒ³ãƒˆID
         [Range(0f, 1f)] public float altCompleteThreshold = 0.5f;
 
         [Header("Calendar Rule (optional)")]
@@ -38,13 +44,13 @@ namespace Game.Data
         public string questId;
         public int priority = 0;
 
-        [Header("Steps(EventIDs) - ’¼—ñis")]
+        [Header("Steps(EventIDs) - ç›´åˆ—é€²è¡Œ")]
         public List<string> stepEventIds = new();
 
         [Header("Presentation")]
-        public string goalTextKey;                  // ƒ[ƒJƒ‰ƒCƒYƒL[
+        public string goalTextKey;                  // ãƒ­ãƒ¼ã‚«ãƒ©ã‚¤ã‚ºã‚­ãƒ¼
         public List<string> rewardFlags = new();
-        public string displayOptions;               // •\¦‚ÉŠÖ‚·‚éƒƒ‚“™
+        public string displayOptions;               // è¡¨ç¤ºã«é–¢ã™ã‚‹ãƒ¡ãƒ¢ç­‰
     }
 }
 

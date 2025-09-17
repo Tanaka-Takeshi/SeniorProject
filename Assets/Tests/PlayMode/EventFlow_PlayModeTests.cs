@@ -21,7 +21,7 @@ public class EventFlow_PlayModeTests
     [SetUp]
     public void SetUp()
     {
-        // ÀŠÔ’â~iSimpleClock ‚Í Jump ‚Ì‚İ‚Åi‚Şj
+        // å®Ÿæ™‚é–“åœæ­¢ï¼ˆSimpleClock ã¯ Jump ã®ã¿ã§é€²ã‚€ï¼‰
         _prevTimeScale = TestHelpers.PauseRealtime();
 
         root = new GameObject("ROOT");
@@ -42,37 +42,37 @@ public class EventFlow_PlayModeTests
         em = emGO.AddComponent<EventManager>();
         emGO.transform.SetParent(root.transform, false);
 
-        // GlobalSettings ’“üi•ª•bŠ·Z 1“ú=1440j
+        // GlobalSettings æ³¨å…¥ï¼ˆåˆ†ï¼ç§’æ›ç®— 1æ—¥=1440ï¼‰
         var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
         settings.dayLengthSeconds = 1440f;
 
-        // ˆË‘¶iDIj’“ü
+        // ä¾å­˜ï¼ˆDIï¼‰æ³¨å…¥
         TestHelpers.Inject(em, clock, locator, input, settings);
     }
 
     [TearDown]
     public void TearDown()
     {
-        // ”O‚Ì‚½‚ß Pause ƒtƒ‰ƒO‚ğ‰ğœ‚µ‚ÄŸ‚ÌƒeƒXƒg‚É‰e‹¿‚µ‚È‚¢‚æ‚¤‚É‚·‚é
+        // å¿µã®ãŸã‚ Pause ãƒ•ãƒ©ã‚°ã‚’è§£é™¤ã—ã¦æ¬¡ã®ãƒ†ã‚¹ãƒˆã«å½±éŸ¿ã—ãªã„ã‚ˆã†ã«ã™ã‚‹
         try
         {
             Game.Tests.TestHelpers.SetPaused(em, false);
         }
         catch
         {
-            // em ‚ª”jŠüÏ‚İA‚Ü‚½‚Í TestHelpers ‚ªŒ©‚¦‚È‚¢ƒP[ƒX‚Å‚Í–³‹
+            // em ãŒç ´æ£„æ¸ˆã¿ã€ã¾ãŸã¯ TestHelpers ãŒè¦‹ãˆãªã„ã‚±ãƒ¼ã‚¹ã§ã¯ç„¡è¦–
         }
 
         UnityEngine.Object.DestroyImmediate(root);
-        Time.timeScale = _prevTimeScale; // Œ³‚É–ß‚·
+        Time.timeScale = _prevTimeScale; // å…ƒã«æˆ»ã™
     }
 
 
-    // ===== ƒwƒ‹ƒp =====
+    // ===== ãƒ˜ãƒ«ãƒ‘ =====
     private void InitEvents(params EventData[] eventsToUse)
     {
         em.InitializeForTest(eventsToUse);
-        // ‰ŠúƒtƒŒ[ƒ€‚Ìæ‚è‚±‚Ú‚µ–h~i0‚Åˆê“x•]‰¿j
+        // åˆæœŸãƒ•ãƒ¬ãƒ¼ãƒ ã®å–ã‚Šã“ã¼ã—é˜²æ­¢ï¼ˆæ™‚åˆ»0ã§ä¸€åº¦è©•ä¾¡ï¼‰
         clock.Jump(0f);
     }
 
@@ -81,7 +81,7 @@ public class EventFlow_PlayModeTests
         var e = ScriptableObject.CreateInstance<EventData>();
         e.eventId = id;
         e.type = Game.Events.EventType.Sub;
-        e.appearAt = appear;          // "HH:MM"i•ª=•bj
+        e.appearAt = appear;          // "HH:MM"ï¼ˆåˆ†=ç§’ï¼‰
         e.startDeadline = startDL;
         e.endDeadline = endDL;
         e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
@@ -92,7 +92,7 @@ public class EventFlow_PlayModeTests
         return e;
     }
 
-    // ===== ƒeƒXƒg =====
+    // ===== ãƒ†ã‚¹ãƒˆ =====
     [Test]
     public void GoldenPath_Scheduled_Available_InProgress_Completed()
     {
@@ -101,17 +101,17 @@ public class EventFlow_PlayModeTests
 
         using var sig = new Game.Tests.TestHelpers.SignalCatcher();
 
-        // 00:10 ‚Ü‚Åi‚ß‚Ä‚©‚çŠJn‘€ì
+        // 00:10 ã¾ã§é€²ã‚ã¦ã‹ã‚‰é–‹å§‹æ“ä½œ
         clock.Jump(10f);
         em.EvaluateFrame();
 
         locator.SetArea("Town/Plaza");
         Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Test", () => input.PressOnce());
 
-        // è‡’l’´‚¦‚³‚¹‚é
+        // é–¾å€¤è¶…ãˆã•ã›ã‚‹
         Game.Tests.TestHelpers.GetRuntime(em, "Sub.Test").SetProgress(0.8f);
 
-        // End ‚Å Completed
+        // End ã§ Completed
         Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "02:00");
         Assert.AreEqual("Sub.Test", sig.Completed);
     }
@@ -129,10 +129,10 @@ public class EventFlow_PlayModeTests
         locator.SetArea("Field");
         Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Fail", () => input.PressOnce());
 
-        // i’»‚Íè‡’l–¢–‚Ì‚Ü‚Ü
+        // é€²æ—ã¯é–¾å€¤æœªæº€ã®ã¾ã¾
         Game.Tests.TestHelpers.GetRuntime(em, "Sub.Fail").SetProgress(0.2f);
 
-        // I—¹“’B ¨ Failed(MissedEndLowProgress)
+        // çµ‚äº†åˆ°é” â†’ Failed(MissedEndLowProgress)
         Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:10");
         Assert.AreEqual(Game.Events.FailedReason.MissedEndLowProgress, got);
     }
@@ -148,12 +148,12 @@ public class EventFlow_PlayModeTests
         using var sig = new TestHelpers.SignalCatcher();
         EventSignals.OnFailed += (id, r) => { if (id == "Sub.Expire") got = r; };
 
-        // êŠ‚É‚¢‚È‚¢ ¨ Available‚É‚È‚ç‚È‚¢‚Ü‚ÜŠJnŠúŒÀ’´‰ß
+        // å ´æ‰€ã«ã„ãªã„ â†’ Availableã«ãªã‚‰ãªã„ã¾ã¾é–‹å§‹æœŸé™è¶…é
         TestHelpers.AdvanceTo(em, clockGO, "00:06");
         Assert.AreEqual(Game.Events.FailedReason.MissedStart, got);
     }
 
-    // 3) requiresButtonPress=false ‚Ì©“®ŠJn
+    // 3) requiresButtonPress=false ã®è‡ªå‹•é–‹å§‹
     [Test]
     public void AutoStart_When_ButtonNotRequired()
     {
@@ -166,16 +166,16 @@ public class EventFlow_PlayModeTests
         locator.SetArea("A");
         Game.Tests.TestHelpers.EnsureAutoStarted(em, "Sub.Auto");
 
-        // ƒNƒŠƒA‚É•K—v‚È‚çi’»‚ğİ’è
+        // ã‚¯ãƒªã‚¢ã«å¿…è¦ãªã‚‰é€²æ—ã‚’è¨­å®š
         Game.Tests.TestHelpers.GetRuntime(em, "Sub.Auto").SetProgress(1f);
 
         Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        Assert.AreEqual("Sub.Auto", sig.Started, "AutoStart‚Å InProgress ‚É‚È‚Á‚Ä‚¢‚é‚Í‚¸");
-        Assert.AreEqual("Sub.Auto", sig.Completed, "IŠú‚Å Completed ‚É‚È‚é‚Í‚¸");
+        Assert.AreEqual("Sub.Auto", sig.Started, "AutoStartã§ InProgress ã«ãªã£ã¦ã„ã‚‹ã¯ãš");
+        Assert.AreEqual("Sub.Auto", sig.Completed, "çµ‚æœŸã§ Completed ã«ãªã‚‹ã¯ãš");
     }
 
 
-    // 4) i’»è‡’l‚¿‚å‚¤‚Ç‚Å Completed
+    // 4) é€²æ—ï¼é–¾å€¤ã¡ã‚‡ã†ã©ã§ Completed
     [Test]
     public void Completed_When_Progress_Equals_Threshold()
     {
@@ -184,22 +184,22 @@ public class EventFlow_PlayModeTests
 
         using var sig = new Game.Tests.TestHelpers.SignalCatcher();
 
-        // êŠ‚ğƒZƒbƒg
+        // å ´æ‰€ã‚’ã‚»ãƒƒãƒˆ
         locator.SetArea("A");
 
-        // š ƒwƒ‹ƒp‚ÅŠmÀ‚É Started ‚Ü‚Åi‚ß‚é
+        // â˜… ãƒ˜ãƒ«ãƒ‘ã§ç¢ºå®Ÿã« Started ã¾ã§é€²ã‚ã‚‹
         Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Equal", () => input.PressOnce());
 
-        // i’»è‡’l‚¿‚å‚¤‚Ç
+        // é€²æ—ï¼é–¾å€¤ã¡ã‚‡ã†ã©
         Game.Tests.TestHelpers.GetRuntime(em, "Sub.Equal").SetProgress(0.6f);
 
-        // I—¹“’B ¨ Completed
+        // çµ‚äº†åˆ°é” â†’ Completed
         Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        Assert.AreEqual("Sub.Equal", sig.Completed, "è‡’l‚¿‚å‚¤‚Ç‚Å Completed ‚É‚È‚é‚Í‚¸");
+        Assert.AreEqual("Sub.Equal", sig.Completed, "é–¾å€¤ã¡ã‚‡ã†ã©ã§ Completed ã«ãªã‚‹ã¯ãš");
     }
 
 
-    // 5) ƒ|[ƒY‚Å•]‰¿‚ğ~‚ß‚éiIsGloballyPausedj
+    // 5) ãƒãƒ¼ã‚ºã§è©•ä¾¡ã‚’æ­¢ã‚ã‚‹ï¼ˆIsGloballyPausedï¼‰
     [Test]
     public void Pause_Stops_Evaluation()
     {
@@ -208,21 +208,21 @@ public class EventFlow_PlayModeTests
 
         using var sig = new TestHelpers.SignalCatcher();
 
-        // Pause ONiÅ‰‚Éj
+        // Pause ONï¼ˆæœ€åˆã«ï¼‰
         TestHelpers.SetPaused(em, true);
 
-        // •]‰¿‚µ‚Ä‚à Scheduled ‚Ío‚È‚¢
+        // è©•ä¾¡ã—ã¦ã‚‚ Scheduled ã¯å‡ºãªã„
         TestHelpers.AdvanceTo(em, clockGO, "00:00");
-        Assert.IsNull(sig.Scheduled, "Pause’†‚ÍScheduled‚ª”­‰Î‚µ‚È‚¢‚Í‚¸");
+        Assert.IsNull(sig.Scheduled, "Pauseä¸­ã¯ScheduledãŒç™ºç«ã—ãªã„ã¯ãš");
         TestHelpers.AssertState(em, "Sub.Pause", Game.Events.EventState.Locked);
 
-        // Pause OFF ¨ ‰‚ß‚Äi‚Ş
+        // Pause OFF â†’ åˆã‚ã¦é€²ã‚€
         TestHelpers.SetPaused(em, false);
         TestHelpers.Tick(em);
-        Assert.AreEqual("Sub.Pause", sig.Scheduled, "Pause‰ğœŒã‚ÉScheduled‚ª”­‰Î‚·‚é‚Í‚¸");
+        Assert.AreEqual("Sub.Pause", sig.Scheduled, "Pauseè§£é™¤å¾Œã«ScheduledãŒç™ºç«ã™ã‚‹ã¯ãš");
     }
 
-    // ƒfƒoƒbƒO—pi•K—v‚È‚Æ‚«‚¾‚¯g‚¤j
+    // ãƒ‡ãƒãƒƒã‚°ç”¨ï¼ˆå¿…è¦ãªã¨ãã ã‘ä½¿ã†ï¼‰
     private void WireLogs()
     {
         EventSignals.OnScheduled += id => Debug.Log("[SIG] Scheduled " + id);
@@ -233,205 +233,3 @@ public class EventFlow_PlayModeTests
         EventSignals.OnExpired += id => Debug.Log("[SIG] Expired " + id);
     }
 }
-
-
-//// Assets/Tests/Common/TestHelpers.cs
-//using System;
-//using System.Collections.Generic;
-//using System.Reflection;
-//using NUnit.Framework;
-//using UnityEngine;
-//using Game.Events;
-//using Game.Runtime;
-
-//namespace Game.Tests
-//{
-//    /// <summary>
-//    /// ”½ËEŠÔEDIEƒVƒOƒiƒ‹w“Ç‚È‚ÇAƒeƒXƒg‹¤’Ê‚Ìƒwƒ‹ƒpŒQB
-//    /// EditMode/PlayMode ‹¤’Ê‚Å—˜—p‰Â”\B
-//    /// </summary>
-//    public static class TestHelpers
-//    {
-//        //===============================
-//        // ”½Ëiprivate field ƒAƒNƒZƒXj
-//        //===============================
-//        public static FieldInfo PF(Type t, string name)
-//            => t.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
-
-//        public static void SetPrivateField(object target, string name, object value)
-//        {
-//            var f = PF(target.GetType(), name);
-//            Assert.IsNotNull(f, $"{target.GetType().Name}.{name} ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ");
-//            f.SetValue(target, value);
-//        }
-
-//        public static T GetPrivateField<T>(object target, string name)
-//        {
-//            var f = PF(target.GetType(), name);
-//            Assert.IsNotNull(f, $"{target.GetType().Name}.{name} ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ");
-//            return (T)f.GetValue(target);
-//        }
-
-//        // EventManager ‚Ì“à•”ƒfƒBƒNƒVƒ‡ƒiƒŠæ“¾
-//        public static Dictionary<string, EventRuntime> GetRuntimeDict(EventManager em)
-//            => GetPrivateField<Dictionary<string, EventRuntime>>(em, "_events");
-
-//        public static EventRuntime GetRuntime(EventManager em, string id)
-//        {
-//            var dict = GetRuntimeDict(em);
-//            Assert.IsTrue(dict.ContainsKey(id), $"_events ‚É {id} ‚ª‘¶İ‚µ‚Ü‚¹‚ñ");
-//            return dict[id];
-//        }
-
-//        //===============================
-//        // DI ’“üiƒtƒB[ƒ‹ƒh–¼‚ğ‚±‚±‚ÅW–ñj
-//        //===============================
-//        public static class EmField
-//        {
-//            public const string GlobalSettings = "globalSettings";
-//            public const string ClockBehaviour = "clockBehaviour";
-//            public const string LocationBehaviour = "locationBehaviour";
-//            public const string InputBehaviour = "inputBehaviour";
-//            public const string TestPause = "testPause"; // Pause—piÀ‘•‚É‡‚í‚¹‚Äj
-//        }
-
-//        public static void Inject(EventManager em,
-//                                  MonoBehaviour clock,
-//                                  MonoBehaviour locator,
-//                                  MonoBehaviour input,
-//                                  ScriptableObject globalSettings = null)
-//        {
-//            if (globalSettings != null)
-//                SetPrivateField(em, EmField.GlobalSettings, globalSettings);
-
-//            if (clock != null) SetPrivateField(em, EmField.ClockBehaviour, clock);
-//            if (locator != null) SetPrivateField(em, EmField.LocationBehaviour, locator);
-//            if (input != null) SetPrivateField(em, EmField.InputBehaviour, input);
-//        }
-
-//        public static void SetPaused(EventManager em, bool paused)
-//            => SetPrivateField(em, EmField.TestPause, paused);
-
-//        //===============================
-//        // ŠÔ§ŒäiƒeƒXƒgˆÀ’è‰»j
-//        //===============================
-//        /// <summary>PlayMode‚ÅÀŠÔis‚ğ~‚ß‚éiSetUp‚ÅŒÄ‚Ôj</summary>
-//        public static float PauseRealtime()
-//        {
-//            var prev = Time.timeScale;
-//            Time.timeScale = 0f;
-//            return prev;
-//        }
-
-//        /// <summary>PlayMode‚ÅÀŠÔis‚ğ–ß‚·iTearDown‚ÅŒÄ‚Ôj</summary>
-//        public static void ResumeRealtime(float previousTimeScale)
-//        {
-//            Time.timeScale = previousTimeScale;
-//        }
-
-//        /// <summary>u•ª•bvŠ·Z‚Ì gHH:MMh ‚ğ•b(float)‚ÖB</summary>
-//        public static float HHMM(string s)
-//        {
-//            if (string.IsNullOrEmpty(s)) return 0f;
-//            var sp = s.Split(':');
-//            if (sp.Length < 2) return 0f;
-//            return int.Parse(sp[0]) * 60 + int.Parse(sp[1]);
-//        }
-
-//        /// <summary>ƒQ[ƒ€“à‚ğ s ‚ÉƒWƒƒƒ“ƒv‚µA“’B¨Šm’è ‚Ì2•]‰¿‚ğs‚¤B</summary>
-//        public static void AdvanceTo(EventManager em, GameObject clockGO, string s)
-//        {
-//            // SimpleClock ‚ğ‘z’èFJump(float) ƒƒ\ƒbƒh‚ğŒÄ‚Ô
-//            var clock = clockGO.GetComponent<MonoBehaviour>();
-//            var mi = clock.GetType().GetMethod("Jump", BindingFlags.Public | BindingFlags.Instance);
-//            Assert.IsNotNull(mi, "SimpleClock ‚É Jump(float) ‚ª‚ ‚è‚Ü‚¹‚ñ");
-//            mi.Invoke(clock, new object[] { HHMM(s) });
-
-//            Tick(em, 2); // “’B¨Šm’è
-//        }
-
-//        /// <summary>EvaluateFrame ‚ğ n ‰ñŒÄ‚ÔB</summary>
-//        public static void Tick(EventManager em, int n = 1)
-//        {
-//            for (int i = 0; i < n; i++) em.EvaluateFrame();
-//        }
-
-//        //===============================
-//        // ƒVƒOƒiƒ‹w“ÇiŠÈˆÕƒLƒƒƒvƒ`ƒƒj
-//        //===============================
-//        public sealed class SignalCatcher : IDisposable
-//        {
-//            public string Scheduled;
-//            public string Available;
-//            public string Started;
-//            public string Completed;
-//            public (string id, FailedReason reason)? Failed;
-//            public string Expired;
-
-//            public SignalCatcher(bool wire = true)
-//            {
-//                if (wire) Wire();
-//            }
-
-//            public void Wire()
-//            {
-//                EventSignals.OnScheduled += OnScheduled;
-//                EventSignals.OnAvailable += OnAvailable;
-//                EventSignals.OnStarted += OnStarted;
-//                EventSignals.OnCompleted += OnCompleted;
-//                EventSignals.OnFailed += OnFailed;
-//                EventSignals.OnExpired += OnExpired;
-//            }
-
-//            public void Unwire()
-//            {
-//                EventSignals.OnScheduled -= OnScheduled;
-//                EventSignals.OnAvailable -= OnAvailable;
-//                EventSignals.OnStarted -= OnStarted;
-//                EventSignals.OnCompleted -= OnCompleted;
-//                EventSignals.OnFailed -= OnFailed;
-//                EventSignals.OnExpired -= OnExpired;
-//            }
-
-//            void OnScheduled(string id) => Scheduled = id;
-//            void OnAvailable(string id) => Available = id;
-//            void OnStarted(string id) => Started = id;
-//            void OnCompleted(string id) => Completed = id;
-//            void OnFailed(string id, FailedReason r) => Failed = (id, r);
-//            void OnExpired(string id) => Expired = id;
-
-//            public void Clear()
-//            {
-//                Scheduled = Available = Started = Completed = Expired = null;
-//                Failed = null;
-//            }
-
-//            public void Dispose() => Unwire();
-//        }
-
-//        //===============================
-//        // ‚æ‚­g‚¤’èŒ^‘€ì
-//        //===============================
-
-//        /// <summary>
-//        /// AutoStartirequiresButtonPress=falsej‚ÅŠmÀ‚É Start ‚³‚¹‚éB
-//        /// êŠƒZƒbƒg¨EvaluateFrame~2iScheduled¨Available¨StartjB
-//        /// </summary>
-//        public static void EnsureAutoStart(EventManager em, string areaId)
-//        {
-//            // locator.SetArea(areaId) ‚ğŒÄ‚ÔiSimpleLocationResolver ‚É‡‚í‚¹‚½”½Ëj
-//            // ’¼ÚQÆ‚Å‚«‚é‚È‚çƒeƒXƒg‘¤‚ÅŒÄ‚ñ‚Å‚àOKB
-//            Tick(em, 1); // Scheduled
-//            Tick(em, 1); // Available¨AutoStart
-//        }
-
-//        /// <summary>
-//        /// Œ»İ‚Ì EventRuntime.State ‚ğ Asserts •t‚«‚ÅŠm”FB
-//        /// </summary>
-//        public static void AssertState(EventManager em, string id, Game.Events.EventState expected)
-//        {
-//            var st = GetRuntime(em, id).State;
-//            Assert.AreEqual(expected, st, $"{id} ‚Ìó‘Ô‚ª‘z’è({expected})‚ÆˆÙ‚È‚è‚Ü‚·: {st}");
-//        }
-//    }
-//}
