@@ -7,35 +7,35 @@ using Game.Events;
 namespace Game.Runtime
 {
     /// <summary>
-    /// ƒNƒGƒXƒg’ñ¦E—š—ğE•ñViƒtƒ‰ƒOjE’Ê’m§Œä‚ğ’S‚¤Å¬À‘•B
-    /// EƒCƒxƒ“ƒgM†‚ğw“Ç‚µ‚Ä—š—ğ‚ğc‚·
-    /// EƒNƒGƒXƒg‚Ì‘SƒXƒeƒbƒv’B¬‚Å•ñVƒtƒ‰ƒO‚ğ•t—^
-    /// Eƒuƒ‰ƒbƒNƒAƒEƒg’†‚Í’Ê’m‚ğ’x‰„i‰ğœ‚É‚Ü‚Æ‚ß‚Ä“K—pj
-    /// ¦UI‚Í‚½‚¸AƒeƒXƒg—p‚É“à•”ó‘Ô‚ğŒöŠJƒvƒƒpƒeƒB‚ÅŠm”F‚Å‚«‚é‚æ‚¤‚É‚·‚é
+    /// ã‚¯ã‚¨ã‚¹ãƒˆæç¤ºãƒ»å±¥æ­´ãƒ»å ±é…¬ï¼ˆãƒ•ãƒ©ã‚°ï¼‰ãƒ»é€šçŸ¥åˆ¶å¾¡ã‚’æ‹…ã†æœ€å°å®Ÿè£…ã€‚
+    /// ãƒ»ã‚¤ãƒ™ãƒ³ãƒˆä¿¡å·ã‚’è³¼èª­ã—ã¦å±¥æ­´ã‚’æ®‹ã™
+    /// ãƒ»ã‚¯ã‚¨ã‚¹ãƒˆã®å…¨ã‚¹ãƒ†ãƒƒãƒ—é”æˆã§å ±é…¬ãƒ•ãƒ©ã‚°ã‚’ä»˜ä¸
+    /// ãƒ»ãƒ–ãƒ©ãƒƒã‚¯ã‚¢ã‚¦ãƒˆä¸­ã¯é€šçŸ¥ã‚’é…å»¶ï¼ˆè§£é™¤æ™‚ã«ã¾ã¨ã‚ã¦é©ç”¨ï¼‰
+    /// â€»UIã¯æŒãŸãšã€ãƒ†ã‚¹ãƒˆç”¨ã«å†…éƒ¨çŠ¶æ…‹ã‚’å…¬é–‹ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã§ç¢ºèªã§ãã‚‹ã‚ˆã†ã«ã™ã‚‹
     /// </summary>
     public sealed class QuestManager : MonoBehaviour
     {
         [SerializeField] private List<QuestData> quests = new();
 
-        // ====== ŒŸØ‚µ‚â‚·‚¢ŒöŠJƒvƒƒpƒeƒB ======
+        // ====== æ¤œè¨¼ã—ã‚„ã™ã„å…¬é–‹ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ ======
         public bool NotificationsBlackout { get; private set; }
 
-        // ƒCƒxƒ“ƒg—š—ğiƒƒOj: "Started/Completed/Failed/Expired/Available/Scheduled" ‚È‚Ç
+        // ã‚¤ãƒ™ãƒ³ãƒˆå±¥æ­´ï¼ˆãƒ­ã‚°ï¼‰: "Started/Completed/Failed/Expired/Available/Scheduled" ãªã©
         public readonly List<(string signal, string eventId)> EventLog = new();
 
-        // ƒNƒGƒXƒgisó‹µFQuestID -> Š®—¹‚µ‚½ EventID ‚ÌW‡
+        // ã‚¯ã‚¨ã‚¹ãƒˆé€²è¡ŒçŠ¶æ³ï¼šQuestID -> å®Œäº†ã—ãŸ EventID ã®é›†åˆ
         public readonly Dictionary<string, HashSet<string>> QuestProgress = new();
 
-        // ÅI“I‚É•t—^‚³‚ê‚½•ñVƒtƒ‰ƒOid•¡‚È‚µj
+        // æœ€çµ‚çš„ã«ä»˜ä¸ã•ã‚ŒãŸå ±é…¬ãƒ•ãƒ©ã‚°ï¼ˆé‡è¤‡ãªã—ï¼‰
         public readonly HashSet<string> RewardFlags = new();
 
-        // ƒuƒ‰ƒbƒNƒAƒEƒg’†‚É—­‚ß‚é’Ê’mi‰ğœ‚É EventLog ‚Ö”½‰fj
+        // ãƒ–ãƒ©ãƒƒã‚¯ã‚¢ã‚¦ãƒˆä¸­ã«æºœã‚ã‚‹é€šçŸ¥ï¼ˆè§£é™¤æ™‚ã« EventLog ã¸åæ˜ ï¼‰
         private readonly Queue<(string signal, string eventId)> _delayed = new();
 
-        // ‹tˆø‚«FEventID -> Š‘®ƒNƒGƒXƒgIDi•¡”ƒNƒGƒXƒg‚ª“¯ˆêƒCƒxƒ“ƒg‚ğQÆ‚·‚éƒP[ƒX‚ÍŠî–{‘z’èŠO‚¾‚ªA”z—ñ‰»j
+        // é€†å¼•ãï¼šEventID -> æ‰€å±ã‚¯ã‚¨ã‚¹ãƒˆIDï¼ˆè¤‡æ•°ã‚¯ã‚¨ã‚¹ãƒˆãŒåŒä¸€ã‚¤ãƒ™ãƒ³ãƒˆã‚’å‚ç…§ã™ã‚‹ã‚±ãƒ¼ã‚¹ã¯åŸºæœ¬æƒ³å®šå¤–ã ãŒã€é…åˆ—åŒ–ï¼‰
         private readonly Dictionary<string, List<string>> _eventToQuests = new();
 
-        // ====== ƒ‰ƒCƒtƒTƒCƒNƒ‹ ======
+        // ====== ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« ======
         public void Awake()
         {
             BuildReverseIndex();
@@ -64,15 +64,15 @@ namespace Game.Runtime
             EventSignals.OnProgress -= HandleProgress;
         }
 
-        // ====== ŠO•”‘€ìAPIiƒeƒXƒg‚©‚ç‚àg‚¤j ======
+        // ====== å¤–éƒ¨æ“ä½œAPIï¼ˆãƒ†ã‚¹ãƒˆã‹ã‚‰ã‚‚ä½¿ã†ï¼‰ ======
         public void SetBlackout(bool on)
         {
             if (on == NotificationsBlackout) return;
             NotificationsBlackout = on;
-            if (!on) FlushDelayed(); // ‰ğœ‚É—­‚ß‚½’Ê’m‚ğ”½‰f
+            if (!on) FlushDelayed(); // è§£é™¤æ™‚ã«æºœã‚ãŸé€šçŸ¥ã‚’åæ˜ 
         }
 
-        // ====== “à•”FƒCƒ“ƒfƒbƒNƒXE‰Šú‰» ======
+        // ====== å†…éƒ¨ï¼šã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ»åˆæœŸåŒ– ======
         private void BuildReverseIndex()
         {
             _eventToQuests.Clear();
@@ -132,7 +132,7 @@ namespace Game.Runtime
                 }
                 set.Add(eventId);
 
-                // ‘SƒXƒeƒbƒvŠ®—¹‚È‚ç•ñVƒtƒ‰ƒO‚ğ•t—^
+                // å…¨ã‚¹ãƒ†ãƒƒãƒ—å®Œäº†ãªã‚‰å ±é…¬ãƒ•ãƒ©ã‚°ã‚’ä»˜ä¸
                 var q = quests.FirstOrDefault(x => x.questId == qid);
                 if (q != null && q.stepEventIds.All(e => set.Contains(e)))
                 {
@@ -142,7 +142,7 @@ namespace Game.Runtime
             }
         }
 
-        // ====== ƒVƒOƒiƒ‹ƒnƒ“ƒhƒ‰ ======
+        // ====== ã‚·ã‚°ãƒŠãƒ«ãƒãƒ³ãƒ‰ãƒ© ======
         private void HandleScheduled(string id) => AppendLog("Scheduled", id);
         private void HandleAvailable(string id) => AppendLog("Available", id);
         private void HandleStarted(string id) => AppendLog("Started", id);
@@ -165,44 +165,7 @@ namespace Game.Runtime
 
         private void HandleProgress(string id, float pct)
         {
-            // i’»‚ÍƒƒO‚µ‚È‚¢ or •K—v‚È‚ç‹L˜^i¡‰ñ‚ÍƒƒO‚µ‚È‚¢j
+            // é€²æ—ã¯ãƒ­ã‚°ã—ãªã„ or å¿…è¦ãªã‚‰è¨˜éŒ²ï¼ˆä»Šå›ã¯ãƒ­ã‚°ã—ãªã„ï¼‰
         }
     }
 }
-
-
-//using System.Collections.Generic;
-//using UnityEngine;
-//using Game.Data;
-
-//namespace Game.Runtime
-//{
-//    public sealed class QuestManager : MonoBehaviour
-//    {
-//        [SerializeField] private List<QuestData> quests = new();
-
-//        private void OnEnable()
-//        {
-//            EventSignals.OnStarted += HandleStarted;
-//            EventSignals.OnCompleted += HandleCompleted;
-//            EventSignals.OnFailed += HandleFailed;
-//            EventSignals.OnExpired += HandleExpired;
-//            EventSignals.OnProgress += HandleProgress;
-//        }
-
-//        private void OnDisable()
-//        {
-//            EventSignals.OnStarted -= HandleStarted;
-//            EventSignals.OnCompleted -= HandleCompleted;
-//            EventSignals.OnFailed -= HandleFailed;
-//            EventSignals.OnExpired -= HandleExpired;
-//            EventSignals.OnProgress -= HandleProgress;
-//        }
-
-//        private void HandleStarted(string id) { /* —š—ğEUIXV */ }
-//        private void HandleCompleted(string id) { /* ƒtƒ‰ƒO•ñVE—š—ğ */ }
-//        private void HandleFailed(string id, Game.Events.FailedReason r) { /* ƒƒO */ }
-//        private void HandleExpired(string id) { /* ƒƒO */ }
-//        private void HandleProgress(string id, float pct) { /* •\¦XV */ }
-//    }
-//}

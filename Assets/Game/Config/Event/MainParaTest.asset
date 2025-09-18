@@ -22,6 +22,7 @@ MonoBehaviour:
     id: TestArea
     worldPos: {x: 0, y: 0, z: 0}
   requiresButtonPress: 1
+  autoStartOnLocation: 0
   dependencies: []
   altCompleteThreshold: 0
   weekdayRule:

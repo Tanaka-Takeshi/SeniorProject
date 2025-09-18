@@ -1,188 +1,147 @@
+// Assets/Tests/PlayMode/ParallelEvents_PlayModeTests.cs
 using NUnit.Framework;
 using UnityEngine;
 using Game.Data;
 using Game.Events;
-using Game.Runtime;
-using Game.Tests;                    // TestHelpers
-using System.Collections.Generic;
+using Game.Tests;   // PlayModeTestBase / TestHelpers
 
-public class ParallelEvents_PlayModeTests
+namespace Game.Tests.PlayMode
 {
-    GameObject root, emGO, clockGO, locGO, inputGO;
-    EventManager em;
-    SimpleClock clock;
-    SimpleLocationResolver locator;
-    TestInputProxy input;
-    float _prevScale;
-
-    [SetUp]
-    public void SetUp()
+    /// <summary>
+    /// è¤‡æ•°ã‚¤ãƒ™ãƒ³ãƒˆãŒä¸¦åˆ—ã«è©•ä¾¡ã•ã‚Œã‚‹ã¨ãã®æ–°ä»•æ§˜æ¤œè¨¼ï¼š
+    /// - æ™‚é–“ã§è¤‡æ•°ãŒåŒæ™‚ã« Availableï¼ˆå ´æ‰€ã¯ä¸å•ï¼‰
+    /// - Start ã¯ã€Œå ´æ‰€åˆ°é”ã€ã¾ãŸã¯ã€Œã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã€
+    /// - ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã¯ 1ãƒ•ãƒ¬ãƒ¼ãƒ 1å›æ¶ˆè²»ã‹ã¤ Mainâ†’Sub ã®å„ªå…ˆã§é–‹å§‹
+    /// </summary>
+    public class ParallelEvents_PlayModeTests : PlayModeTestBase
     {
-        _prevScale = TestHelpers.PauseRealtime();
+        [SetUp] public void Setup2() => BaseSetup();
+        [TearDown] public void Teardown2() => BaseTearDown();
 
-        root = new GameObject("ROOT");
+        private static EventData MakeSO(
+            string id, Game.Events.EventType type,
+            string appear, string startDL, string endDL,
+            string areaId,
+            bool autoStartOnLocation, bool requiresButtonPress,
+            float alt = 0.5f)
+        {
+            var e = ScriptableObject.CreateInstance<EventData>();
+            e.eventId = id;
+            e.type = type;
+            e.appearAt = appear;            // "HH:MM"
+            e.startDeadline = startDL;
+            e.endDeadline = endDL;
+            e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
+            e.autoStartOnLocation = autoStartOnLocation;
+            e.requiresButtonPress = requiresButtonPress;
+            e.altCompleteThreshold = alt;
+            e.weekdayRule = new WeekdayRule(); // è¨±å¯
+            e.dependencies = new System.Collections.Generic.List<string>();
+            return e;
+        }
 
-        clockGO = new GameObject("Clock");
-        clock = clockGO.AddComponent<SimpleClock>();
-        clockGO.transform.SetParent(root.transform, false);
+        [Test]
+        public void Both_become_Available_by_time_then_only_one_starts_by_single_interact_preferring_Main()
+        {
+            // Main/Sub ã¨ã‚‚ã«åŒæ™‚åˆ»ã«Availableã€‚ä¸¡æ–¹ã¨ã‚‚ã€Œã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆå¿…é ˆãƒ»è‡ªå‹•é–‹å§‹ç„¡ã—ã€ã€‚
+            var main = MakeSO("M1", Game.Events.EventType.Main, "08:00", "09:00", "10:00", "Square", autoStartOnLocation: false, requiresButtonPress: true);
+            var sub = MakeSO("S1", Game.Events.EventType.Sub, "08:00", "09:00", "10:00", "Square", autoStartOnLocation: false, requiresButtonPress: true);
+            em.InitializeForTest(new[] { main, sub });
 
-        locGO = new GameObject("Locator");
-        locator = locGO.AddComponent<SimpleLocationResolver>();
-        locGO.transform.SetParent(root.transform, false);
+            // Hookã¯æ™‚é–“ã‚’é€²ã‚ã‚‹å‰ã«
+            using var sig = new TestHelpers.SignalCatcher();
 
-        inputGO = new GameObject("Input");
-        input = inputGO.AddComponent<TestInputProxy>();
-        inputGO.transform.SetParent(root.transform, false);
+            // æ™‚é–“ã§åŒæ™‚ã« Availableï¼ˆå ´æ‰€ä¸å•ï¼‰
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "M1").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S1").State);
 
-        emGO = new GameObject("EventManager");
-        em = emGO.AddComponent<EventManager>();
-        emGO.transform.SetParent(root.transform, false);
+            // ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã¯ 1ãƒ•ãƒ¬ãƒ¼ãƒ 1å›æ¶ˆè²» â†’ Main ãŒå„ªå…ˆã—ã¦ Startã€Sub ã¯æ®‹ã‚‹
+            input.PressOnce();
+            TestHelpers.Tick(em, 1);
 
-        var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
-        settings.dayLengthSeconds = 1440f;
-        TestHelpers.Inject(em, clock, locator, input, settings);
-    }
+            Assert.AreEqual(EventState.InProgress, GetRuntime(em, "M1").State, "Main ãŒå„ªå…ˆã§é–‹å§‹ã•ã‚Œã‚‹ã¯ãš");
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S1").State, "Sub ã¯ã¾ã  Available ã®ã¾ã¾");
+        }
 
-    [TearDown]
-    public void TearDown()
-    {
-        try { TestHelpers.SetPaused(em, false); } catch { }
-        Object.DestroyImmediate(root);
-        TestHelpers.ResumeRealtime(_prevScale);
-    }
+        [Test]
+        public void Location_starts_only_target_event_when_autoStartOnLocation_true()
+        {
+            // Sub ã¯ã€Œåˆ°é”ã§é–‹å§‹ã€ã€Main ã¯ã€Œã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã®ã¿ã€ã§é–‹å§‹ã€‚
+            var main = MakeSO("M2", Game.Events.EventType.Main, "08:00", "09:00", "10:00", "Square",
+                              autoStartOnLocation: false, requiresButtonPress: true);
+            var sub = MakeSO("S2", Game.Events.EventType.Sub, "08:00", "09:00", "10:00", "Square",
+                              autoStartOnLocation: true, requiresButtonPress: true);
+            em.InitializeForTest(new[] { main, sub });
 
-    // ===== ƒwƒ‹ƒp =====
-    private void InitEvents(params EventData[] list)
-    {
-        em.InitializeForTest(list);
-        clock.Jump(0f);   // ¦‚±‚±‚Å‚Í•]‰¿‚Í‚µ‚È‚¢
-    }
+            using var sig = new TestHelpers.SignalCatcher();
 
-    private EventData MakeEvent(
-        string id, string appear, string startDL, string endDL, string areaId,
-        float alt = 0.5f, bool requiresBtn = true, Game.Events.EventType type = Game.Events.EventType.Sub)
-    {
-        var e = ScriptableObject.CreateInstance<EventData>();
-        e.eventId = id;
-        e.type = type;
-        e.appearAt = appear;
-        e.startDeadline = startDL;
-        e.endDeadline = endDL;
-        e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
-        e.requiresButtonPress = requiresBtn;
-        e.dependencies = new List<string>();
-        e.altCompleteThreshold = alt;
-        e.weekdayRule = new WeekdayRule();
-        return e;
-    }
+            // åŒæ™‚ã« Available
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "M2").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S2").State);
 
-    // ========== ƒeƒXƒg ==========
+            // å ´æ‰€åˆ°é” â†’ autoStartOnLocation=true ã® Sub ã ã‘ãŒé–‹å§‹
+            locator.SetArea("Square");
+            TestHelpers.Tick(em, 1);
 
-    [Test]
-    public void Parallel_TwoSubs_Advance_Independently()
-    {
-        var a = MakeEvent("Sub.A", "00:00", "00:10", "00:30", "Area/A", 0.5f, true, Game.Events.EventType.Sub);
-        var b = MakeEvent("Sub.B", "00:00", "00:10", "00:30", "Area/B", 0.6f, true, Game.Events.EventType.Sub);
-        InitEvents(a, b);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "M2").State);
+            Assert.AreEqual(EventState.InProgress, GetRuntime(em, "S2").State);
+        }
 
-        // --- A ‚ğŠJn ---
-        locator.SetArea("Area/A");
-        TestHelpers.Tick(em, 1); // Locked ¨ Scheduled
-        TestHelpers.Tick(em, 1); // Scheduled ¨ Available
-        input.PressOnce();       // š Available ‚É‚È‚Á‚½gŒãh‚É‰Ÿ‚·
-        TestHelpers.Tick(em, 1); // Available ¨ InProgress
-        TestHelpers.AssertState(em, "Sub.A", Game.Events.EventState.InProgress);
+        [Test]
+        public void Interact_then_Location_in_next_frame_starts_remaining_event()
+        {
+            // ã¾ãšã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§ Main ã‚’é–‹å§‹ â†’ æ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã«å ´æ‰€åˆ°é”ã§ Sub ã‚’é–‹å§‹
+            var main = MakeSO("M3", Game.Events.EventType.Main, "08:00", "09:00", "10:00", "Square",
+                              autoStartOnLocation: false, requiresButtonPress: true);
+            var sub = MakeSO("S3", Game.Events.EventType.Sub, "08:00", "09:00", "10:00", "Square",
+                              autoStartOnLocation: true, requiresButtonPress: true);
+            em.InitializeForTest(new[] { main, sub });
 
-        // --- B ‚àŠJn ---
-        locator.SetArea("Area/B");
-        TestHelpers.Tick(em, 1); // Locked ¨ Scheduled
-        TestHelpers.Tick(em, 1); // Scheduled ¨ Available
-        input.PressOnce();       // š “¯‚¶‚­ Available Œã‚É‰Ÿ‚·
-        TestHelpers.Tick(em, 1); // Available ¨ InProgress
-        TestHelpers.AssertState(em, "Sub.B", Game.Events.EventState.InProgress);
+            // æ™‚é–“ã§ Available
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "M3").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S3").State);
 
-        // A ‚Í’B¬AB ‚Í–¢’B
-        TestHelpers.GetRuntime(em, "Sub.A").SetProgress(1.0f);
+            // ãƒ•ãƒ¬ãƒ¼ãƒ 1ï¼šã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆ â†’ Main ãŒé–‹å§‹
+            input.PressOnce();
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual(EventState.InProgress, GetRuntime(em, "M3").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S3").State);
 
-        // š is‘O‚ÉƒLƒƒƒbƒ`ƒƒ‚ğì‚é
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
+            // ãƒ•ãƒ¬ãƒ¼ãƒ 2ï¼šå ´æ‰€åˆ°é” â†’ Sub ãŒé–‹å§‹
+            locator.SetArea("Square");
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual(EventState.InProgress, GetRuntime(em, "S3").State);
+        }
 
-        // ŠúŒÀ“’B
-        TestHelpers.AdvanceTo(em, clockGO, "00:30");
+        [Test]
+        public void If_no_trigger_Sub_misses_start_while_Main_starts_by_interact()
+        {
+            // Main ã ã‘ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§é–‹å§‹ã€Sub ã¯ä½•ã‚‚ã›ãšé–‹å§‹æœŸé™ã‚’è¶…éã—ã¦å¤±æ•—
+            var main = MakeSO("M4", Game.Events.EventType.Main, "08:00", "08:30", "10:00", "Square",
+                              autoStartOnLocation: false, requiresButtonPress: true);
+            var sub = MakeSO("S4", Game.Events.EventType.Sub, "08:00", "08:30", "10:00", "Square",
+                              autoStartOnLocation: false, requiresButtonPress: true);
+            em.InitializeForTest(new[] { main, sub });
 
-        // A Š®—¹
-        Assert.AreEqual("Sub.A", sig.Completed);
+            using var sig = new TestHelpers.SignalCatcher();
 
-        // B ¸”siID ‚Æ——R‚Ü‚Åj
-        Assert.IsTrue(sig.Failed.HasValue &&
-                      sig.Failed.Value.id == "Sub.B" &&
-                      sig.Failed.Value.reason == FailedReason.MissedEndLowProgress,
-                      "B‚ÍŠúŒÀ“’B‚©‚Âi’»–¢’B‚Å MissedEndLowProgress ‚É‚È‚é‚Í‚¸");
+            // åŒæ™‚ã« Available
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "M4").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S4").State);
 
-    }
+            // Main ã‚’ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§é–‹å§‹
+            input.PressOnce();
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual(EventState.InProgress, GetRuntime(em, "M4").State);
+            Assert.AreEqual(EventState.Available, GetRuntime(em, "S4").State);
 
-
-    [Test]
-    public void Parallel_MainAndSub_DoNotBlockEachOther()
-    {
-        var main = MakeEvent("Main.1", "00:00", "00:05", "00:20", "Hub", 0.5f, true, Game.Events.EventType.Main);
-        var sub = MakeEvent("Sub.1", "00:00", "00:05", "00:20", "Hub", 0.5f, true, Game.Events.EventType.Sub);
-        InitEvents(main, sub);
-
-        // “¯ƒGƒŠƒA
-        locator.SetArea("Hub");
-
-        // 1) Locked ¨ Scheduled
-        TestHelpers.Tick(em, 1);
-        // 2) Scheduled ¨ Availablei—¼•û‚ª Available ‚É‚È‚éj
-        TestHelpers.Tick(em, 1);
-
-        // 3) 1‰ñ–Ú‚Ì“ü—Í‚Å ‚Ç‚¿‚ç‚©ˆê•û ‚ğ Start
-        input.PressOnce();
-        TestHelpers.Tick(em, 1);
-
-        // 4) 2‰ñ–Ú‚Ì“ü—Í‚Å c‚è‚Ìˆê•û ‚ğ Start
-        input.PressOnce();
-        TestHelpers.Tick(em, 1);
-
-        // ‚Ç‚¿‚ç‚à InProgress ‚É‚È‚Á‚Ä‚¢‚é‚±‚Æi‡”Ô‚Í”ñŒˆ’èj
-        TestHelpers.AssertState(em, "Main.1", Game.Events.EventState.InProgress);
-        TestHelpers.AssertState(em, "Sub.1", Game.Events.EventState.InProgress);
-
-        // —¼•ûƒNƒŠƒA
-        TestHelpers.GetRuntime(em, "Main.1").SetProgress(1f);
-        TestHelpers.GetRuntime(em, "Sub.1").SetProgress(1f);
-
-        TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        TestHelpers.AssertState(em, "Main.1", Game.Events.EventState.Completed);
-        TestHelpers.AssertState(em, "Sub.1", Game.Events.EventState.Completed);
-    }
-
-
-
-    [Test]
-    public void Parallel_OneFails_OtherContinues()
-    {
-        var a = MakeEvent("Sub.FailFast", "00:00", "00:05", "00:20", "Area/X", 0.5f, true, Game.Events.EventType.Sub);
-        var b = MakeEvent("Sub.Ok", "00:00", "00:05", "00:20", "Area/Y", 0.5f, true, Game.Events.EventType.Sub);
-        InitEvents(a, b);
-
-        // AŠJn¨‘¦’†’f
-        locator.SetArea("Area/X");
-        TestHelpers.Tick(em, 1);
-        input.PressOnce();
-        TestHelpers.Tick(em, 1);
-        TestHelpers.GetRuntime(em, "Sub.FailFast").ForceInterrupt();
-        TestHelpers.AssertState(em, "Sub.FailFast", EventState.Failed);
-
-        // BŠJn¨Š®—¹
-        locator.SetArea("Area/Y");
-        TestHelpers.Tick(em, 1);
-        input.PressOnce();
-        TestHelpers.Tick(em, 1);
-        TestHelpers.GetRuntime(em, "Sub.Ok").SetProgress(1f);
-
-        TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        TestHelpers.AssertState(em, "Sub.Ok", EventState.Completed);
+            // ä½•ã‚‚ã›ãšç· åˆ‡ã‚’ã€Œè¶…ãˆã‚‹ã€â†’ Sub ã¯ MissedStart
+            TestHelpers.AdvanceTo(em, clockGO, "08:31"); // ç­‰å·ã¯è¶…éã«å«ã‚ãªã„
+            Assert.AreEqual(("S4", FailedReason.MissedStart), sig.Failed);
+        }
     }
 }

@@ -4,7 +4,7 @@ using Game.Events;
 using Game.Runtime;
 
 /// <summary>
-/// ƒeƒXƒg—p‚ÌŠÈˆÕ Quest ƒgƒ‰ƒbƒJ[iEventSignals ‚ğw“Ç‚µ‚ÄƒNƒGƒXƒgis‚ğŠÄ‹j
+/// ãƒ†ã‚¹ãƒˆç”¨ã®ç°¡æ˜“ Quest ãƒˆãƒ©ãƒƒã‚«ãƒ¼ï¼ˆEventSignals ã‚’è³¼èª­ã—ã¦ã‚¯ã‚¨ã‚¹ãƒˆé€²è¡Œã‚’ç›£è¦–ï¼‰
 /// </summary>
 public class TestQuestTracker : MonoBehaviour
 {
@@ -31,7 +31,7 @@ public class TestQuestTracker : MonoBehaviour
     }
 
     /// <summary>
-    /// ƒeƒXƒg—p‚ÉƒNƒGƒXƒg‚ğƒ[ƒh
+    /// ãƒ†ã‚¹ãƒˆç”¨ã«ã‚¯ã‚¨ã‚¹ãƒˆã‚’ãƒ­ãƒ¼ãƒ‰
     /// </summary>
     public void LoadQuest(string questId, IEnumerable<string> stepEventIds)
     {
@@ -50,7 +50,7 @@ public class TestQuestTracker : MonoBehaviour
 
         if (CurrentStepId == null) return;
 
-        // OR ƒXƒeƒbƒv‘Î‰: "E2|E3" ‚Ì‚æ‚¤‚È•\‹L‚É‘Î‰
+        // OR ã‚¹ãƒ†ãƒƒãƒ—å¯¾å¿œ: "E2|E3" ã®ã‚ˆã†ãªè¡¨è¨˜ã«å¯¾å¿œ
         bool match;
         if (CurrentStepId.Contains("|"))
         {
@@ -81,5 +81,22 @@ public class TestQuestTracker : MonoBehaviour
             IsQuestFailed = true;
             FailedStepId = eventId;
         }
+    }
+
+    public void ResetAll()
+    {
+        QuestId = null;
+        Steps.Clear();
+        CurrentStepIndex = 0;
+        CompletedSteps.Clear();
+        IsQuestCompleted = false;
+        IsQuestFailed = false;
+        FailedStepId = null;
+    }
+
+    public void SetCurrentStepIndex(int idx)
+    {
+        if (idx < 0 || idx >= Steps.Count) return;
+        CurrentStepIndex = idx;
     }
 }

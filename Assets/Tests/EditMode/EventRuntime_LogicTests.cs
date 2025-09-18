@@ -4,7 +4,7 @@ using Game.Events;
 using Game.Data;
 using Game.Runtime;
 
-// ---- ƒtƒFƒCƒN•]‰¿ƒRƒ“ƒeƒLƒXƒgiŠÂ‹«‚ğƒtƒ‰ƒO‚Å§Œäj ----
+// ---- ãƒ•ã‚§ã‚¤ã‚¯è©•ä¾¡ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆï¼ˆç’°å¢ƒã‚’ãƒ•ãƒ©ã‚°ã§åˆ¶å¾¡ï¼‰ ----
 using System.Collections.Generic;
 
 class FakeCtx : Game.Runtime.IEvalContext
@@ -12,16 +12,16 @@ class FakeCtx : Game.Runtime.IEvalContext
     public bool IsGloballyPaused { get; set; }
     public bool PolicyTreatStartOverAsExpired { get; set; }
 
-    // ===== Šù‘¶‚ÌØ‘Öƒtƒ‰ƒOi‚»‚Ì‚Ü‚Üc‚·j=====
+    // ===== æ—¢å­˜ã®åˆ‡æ›¿ãƒ•ãƒ©ã‚°ï¼ˆãã®ã¾ã¾æ®‹ã™ï¼‰=====
     public bool deps, now, startOver, endReached, calendar = true, loc = true;
 
-    // ===== “ü—ÍiÁ”ïŒ^j =====
-    // ˆÈ‘O‚Í input=true/false ‚¾‚¯‚¾‚Á‚½‚ªA
-    // u‚±‚ÌƒtƒŒ[ƒ€‚Å‰Ÿ‰ºƒGƒbƒW‚ª‚ ‚Á‚½‚©v‚ÆuÁ”ïÏ‚İ‚©v‚ğ•ª‚¯‚é
-    public bool input;            // ‰Ÿ‚µ‚½‚¢ƒtƒŒ[ƒ€‚Å true ‚É‚·‚éi]—ˆ‚Ç‚¨‚èj
-    private bool _inputConsumed;  // ‚»‚ÌƒtƒŒ[ƒ€‚Å‚à‚¤g‚Á‚½‚©
+    // ===== å…¥åŠ›ï¼ˆæ¶ˆè²»å‹ï¼‰ =====
+    // ä»¥å‰ã¯ input=true/false ã ã‘ã ã£ãŸãŒã€
+    // ã€Œã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§æŠ¼ä¸‹ã‚¨ãƒƒã‚¸ãŒã‚ã£ãŸã‹ã€ã¨ã€Œæ¶ˆè²»æ¸ˆã¿ã‹ã€ã‚’åˆ†ã‘ã‚‹
+    public bool input;            // æŠ¼ã—ãŸã„ãƒ•ãƒ¬ãƒ¼ãƒ ã§ true ã«ã™ã‚‹ï¼ˆå¾“æ¥ã©ãŠã‚Šï¼‰
+    private bool _inputConsumed;  // ãã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§ã‚‚ã†ä½¿ã£ãŸã‹
 
-    // --- IEvalContext À‘• ---
+    // --- IEvalContext å®Ÿè£… ---
     public bool DependenciesSatisfied(List<string> ids) => deps;
     public bool NowReached(string t) => now;
     public bool StartDeadlineExceeded(string t) => startOver;
@@ -30,7 +30,7 @@ class FakeCtx : Game.Runtime.IEvalContext
     public bool LocationSatisfied(LocationRef l) => loc;
     public bool InteractionPossible(EventData d) => true;
 
-    // šVFÁ”ïŒ^BÅ‰‚Ì1‰ñ‚¾‚¯ true ‚ğ•Ô‚µAˆÈ~‚Í false
+    // â˜…æ–°ï¼šæ¶ˆè²»å‹ã€‚æœ€åˆã®1å›ã ã‘ true ã‚’è¿”ã—ã€ä»¥é™ã¯ false
     public bool TryConsumeStartInput()
     {
         if (!input || _inputConsumed) return false;
@@ -38,20 +38,20 @@ class FakeCtx : Game.Runtime.IEvalContext
         return true;
     }
 
-    // šŒİŠ·FŒÃ‚¢ŒÄ‚Ño‚µ‚ªc‚Á‚Ä‚¢‚Ä‚à“®‚­‚æ‚¤‚ÉAÁ”ïŒ^‚ğŒÄ‚Ô
+    // â˜…äº’æ›ï¼šå¤ã„å‘¼ã³å‡ºã—ãŒæ®‹ã£ã¦ã„ã¦ã‚‚å‹•ãã‚ˆã†ã«ã€æ¶ˆè²»å‹ã‚’å‘¼ã¶
     public bool StartInputReceived() => TryConsumeStartInput();
 
-    // ===== ƒeƒXƒg•â•i”CˆÓj=====
-    /// <summary>Ÿ‚Ì•]‰¿ƒtƒŒ[ƒ€‚Öi‚ß‚é‘z’è‚Å“ü—Í‚ğƒŠƒZƒbƒgB</summary>
+    // ===== ãƒ†ã‚¹ãƒˆè£œåŠ©ï¼ˆä»»æ„ï¼‰=====
+    /// <summary>æ¬¡ã®è©•ä¾¡ãƒ•ãƒ¬ãƒ¼ãƒ ã¸é€²ã‚ã‚‹æƒ³å®šã§å…¥åŠ›ã‚’ãƒªã‚»ãƒƒãƒˆã€‚</summary>
     public void NextFrame()
     {
-        // ƒtƒŒ[ƒ€‚ğ‚Ü‚½‚®‚Æ input ƒtƒ‰ƒO‚ÍƒfƒtƒHƒ‹ƒg false ‚É–ß‚·‘z’è‚ª©‘RB
-        // iPlayMode‚Ì EventManager.BeginEvalFrame ‘Š“–j
+        // ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’ã¾ãŸãã¨ input ãƒ•ãƒ©ã‚°ã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ false ã«æˆ»ã™æƒ³å®šãŒè‡ªç„¶ã€‚
+        // ï¼ˆPlayModeã® EventManager.BeginEvalFrame ç›¸å½“ï¼‰
         input = false;
         _inputConsumed = false;
     }
 
-    /// <summary>‚±‚ÌƒtƒŒ[ƒ€‚Å‰Ÿ‰ºƒGƒbƒW‚ğ—§‚Ä‚éŠÈˆÕAPIB</summary>
+    /// <summary>ã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§æŠ¼ä¸‹ã‚¨ãƒƒã‚¸ã‚’ç«‹ã¦ã‚‹ç°¡æ˜“APIã€‚</summary>
     public void PressOnceThisFrame()
     {
         input = true;
@@ -60,11 +60,11 @@ class FakeCtx : Game.Runtime.IEvalContext
 }
 
 
-// ---- ƒeƒXƒg–{‘Ì ----
+// ---- ãƒ†ã‚¹ãƒˆæœ¬ä½“ ----
 public class EventRuntime_LogicTests
 {
     EventData Make(string id, string appear = "00:00", string start = "00:10", string end = "00:20",
-                   string area = "A", bool requiresBtn = true, float th = 0.5f)
+                   string area = "A", bool requiresBtn = true, float th = 0.5f, bool autoStartOnLocation = false)
     {
         var e = UnityEngine.ScriptableObject.CreateInstance<EventData>();
         e.eventId = id;
@@ -74,6 +74,7 @@ public class EventRuntime_LogicTests
         e.endDeadline = end;
         e.location = new LocationRef { kind = LocationKind.AreaId, id = area };
         e.requiresButtonPress = requiresBtn;
+        e.autoStartOnLocation = autoStartOnLocation; // â˜…è¿½åŠ 
         e.dependencies = new System.Collections.Generic.List<string>();
         e.altCompleteThreshold = th;
         e.weekdayRule = new WeekdayRule();
@@ -83,7 +84,7 @@ public class EventRuntime_LogicTests
     [Test]
     public void Scheduled_After_Appear_When_Dependencies_Ok()
     {
-        var ctx = new FakeCtx { deps = true, now = true }; // appear “’B
+        var ctx = new FakeCtx { deps = true, now = true }; // appear åˆ°é”
         var rt = new EventRuntime(Make("E1"));
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Scheduled, rt.State);
@@ -92,11 +93,13 @@ public class EventRuntime_LogicTests
     [Test]
     public void Available_When_Location_Ok()
     {
+        // æ–°ä»•æ§˜ã§ã¯ã€Œæ™‚é–“ã§ Availableã€ã€‚ã“ã“ã§ã¯ now=true ã‚’ç¶­æŒã—ã€loc=true ã‚‚ç«‹ã¦ã¦ã„ã‚‹ãŒ
+        // Available åˆ¤å®šè‡ªä½“ã¯æ™‚é–“ã§è¡Œã‚ã‚Œã‚‹ã€‚
         var ctx = new FakeCtx { deps = true, now = true, loc = true };
         var rt = new EventRuntime(Make("E2"));
-        // Appear “’B ¨ Scheduled
+        // Appear åˆ°é” â†’ Scheduled
         rt.Evaluate(ctx);
-        // êŠğŒOK ¨ Available
+        // æ™‚é–“æ¡ä»¶ã§ â†’ Available
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Available, rt.State);
     }
@@ -104,6 +107,7 @@ public class EventRuntime_LogicTests
     [Test]
     public void Start_When_Input_Received()
     {
+        // requiresButtonPress = trueï¼ˆæ—¢å®šï¼‰ãªã®ã§ã€å…¥åŠ›ã§é–‹å§‹å¯èƒ½
         var ctx = new FakeCtx { deps = true, now = true, loc = true, input = true };
         var rt = new EventRuntime(Make("E3"));
         rt.Evaluate(ctx); // Scheduled
@@ -119,8 +123,8 @@ public class EventRuntime_LogicTests
         var rt = new EventRuntime(Make("E4", th: 0.6f));
         // Start
         rt.Evaluate(ctx); rt.Evaluate(ctx); rt.Evaluate(ctx);
-        rt.SetProgress(0.6f); // è‡’l‚¿‚å‚¤‚Ç
-        // I—¹“’B‚Å”»’è
+        rt.SetProgress(0.6f); // é–¾å€¤ã¡ã‚‡ã†ã©
+        // çµ‚äº†åˆ°é”ã§åˆ¤å®š
         ctx.endReached = true;
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Completed, rt.State);
@@ -133,7 +137,7 @@ public class EventRuntime_LogicTests
         var rt = new EventRuntime(Make("E5", th: 0.6f));
         // Start
         rt.Evaluate(ctx); rt.Evaluate(ctx); rt.Evaluate(ctx);
-        // i’»–¢’B‚Ì‚Ü‚Ü End “’B
+        // é€²æ—æœªé”ã®ã¾ã¾ End åˆ°é”
         ctx.endReached = true;
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Failed, rt.State);
@@ -143,14 +147,14 @@ public class EventRuntime_LogicTests
     [Test]
     public void Expired_When_Not_Started_Before_StartDeadline()
     {
-        // startDeadline ’´‰ß‚ğƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“
+        // startDeadline è¶…éã‚’ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³
         var ctx = new FakeCtx { deps = true, now = true, loc = true, startOver = false, PolicyTreatStartOverAsExpired = true };
         var rt = new EventRuntime(Make("E6"));
-        // Appear ¨ Scheduled
+        // Appear â†’ Scheduled
         rt.Evaluate(ctx);
-        // ŠúŒÀ’¼‘OFAvailable ‚Ü‚Ås‚­iinput=falsej
+        // æœŸé™ç›´å‰ï¼šAvailable ã¾ã§è¡Œãï¼ˆinput=falseï¼‰
         rt.Evaluate(ctx);
-        // ŠúŒÀ’´‰ß
+        // æœŸé™è¶…é
         ctx.startOver = true;
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Expired, rt.State);
@@ -159,11 +163,15 @@ public class EventRuntime_LogicTests
     [Test]
     public void AutoStart_When_RequiresButtonPress_False()
     {
-        var ctx = new FakeCtx { deps = true, now = true, loc = true };
-        var rt = new EventRuntime(Make("E7", requiresBtn: false));
+        // å…¥åŠ›ä¸è¦ï¼ˆrequiresBtn=falseï¼‰ã‹ã¤ åˆ°é”ã§é–‹å§‹ï¼ˆautoStartOnLocation=trueï¼‰
+        // å‡ºç¾æ™‚ã«æ—¢ã«ç›®çš„åœ°ã«å±…ã‚‹ã¨èª¤çˆ†é˜²æ­¢ã§å³é–‹å§‹ã—ãªã„ãŸã‚ã€ã¾ãšã¯ loc=false â†’ ãã®å¾Œ true ã«ã™ã‚‹
+        var ctx = new FakeCtx { deps = true, now = true, loc = false };
+        var rt = new EventRuntime(Make("E7", requiresBtn: false, autoStartOnLocation: true));
         rt.Evaluate(ctx); // Scheduled
-        rt.Evaluate(ctx); // Available
-        rt.Evaluate(ctx); // ©“®‚Å InProgress ‚Ö
+        rt.Evaluate(ctx); // Availableï¼ˆæ™‚é–“ã®ã¿ã§æˆç«‹ï¼‰
+        // ç›®çš„åœ°ã¸åˆ°é”
+        ctx.loc = true;
+        rt.Evaluate(ctx); // åˆ°é”ã§ InProgress
         Assert.AreEqual(EventState.InProgress, rt.State);
     }
 
@@ -172,12 +180,12 @@ public class EventRuntime_LogicTests
     {
         var ctx = new FakeCtx { deps = true, now = true, loc = true, input = true, endReached = true };
         var rt = new EventRuntime(Make("E8"));
-        // Start ¨ End
+        // Start â†’ End
         rt.Evaluate(ctx); rt.Evaluate(ctx); rt.Evaluate(ctx); // InProgress
         rt.SetProgress(1f);
         rt.Evaluate(ctx); // Completed
         var state = rt.State;
-        // ‚³‚ç‚É Evaluate ‚µ‚Ä‚à•Ï‰»‚µ‚È‚¢
+        // ã•ã‚‰ã« Evaluate ã—ã¦ã‚‚å¤‰åŒ–ã—ãªã„
         rt.Evaluate(ctx);
         Assert.AreEqual(state, rt.State);
     }
@@ -188,8 +196,8 @@ public class EventRuntime_LogicTests
         var ctx = new FakeCtx { deps = false, now = true, loc = true };
         var rt = new EventRuntime(Make("E9"));
         rt.Evaluate(ctx);
-        // ˆË‘¶–¢’B ¨ Scheduled ‚É‚È‚ç‚È‚¢‚Í‚¸iÀ‘•‚É‚æ‚è Locked/Idle ˆµ‚¢j
-        Assert.AreNotEqual(EventState.Scheduled, rt.State, "ˆË‘¶–¢’B‚È‚ç”­¶‘Ò‹@‚É“ü‚ç‚È‚¢‘z’è");
+        // ä¾å­˜æœªé” â†’ Scheduled ã«ãªã‚‰ãªã„ã¯ãšï¼ˆå®Ÿè£…ã«ã‚ˆã‚Š Locked/Idle æ‰±ã„ï¼‰
+        Assert.AreNotEqual(EventState.Scheduled, rt.State, "ä¾å­˜æœªé”ãªã‚‰ç™ºç”Ÿå¾…æ©Ÿã«å…¥ã‚‰ãªã„æƒ³å®š");
     }
 
     [Test]
@@ -197,11 +205,11 @@ public class EventRuntime_LogicTests
     {
         var ctx = new FakeCtx { deps = true, now = true, loc = true };
         var rt = new EventRuntime(Make("E10"));
-        // Appear “’B‚Å Scheduled ‚É‚·‚é‘O‚Éƒ|[ƒY
+        // Appear åˆ°é”ã§ Scheduled ã«ã™ã‚‹å‰ã«ãƒãƒ¼ã‚º
         ctx.IsGloballyPaused = true;
         rt.Evaluate(ctx);
-        Assert.AreNotEqual(EventState.Scheduled, rt.State, "ƒ|[ƒY’†‚Íó‘Ô‚ªis‚µ‚È‚¢‘z’è");
-        // ƒ|[ƒY‰ğœ ¨ is
+        Assert.AreNotEqual(EventState.Scheduled, rt.State, "ãƒãƒ¼ã‚ºä¸­ã¯çŠ¶æ…‹ãŒé€²è¡Œã—ãªã„æƒ³å®š");
+        // ãƒãƒ¼ã‚ºè§£é™¤ â†’ é€²è¡Œ
         ctx.IsGloballyPaused = false;
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Scheduled, rt.State);
@@ -210,13 +218,13 @@ public class EventRuntime_LogicTests
     [Test]
     public void StartDeadline_Equal_Edge()
     {
-        // u== ‚Å’´‰ßˆµ‚¢‚É‚·‚é‚©‚Ç‚¤‚©v‚Ì‹«ŠEƒeƒXƒg
-        // ‚±‚±‚Å‚Í gstartOver=trueh ‚ğu’´‰ßv‚Æ‚İ‚È‚·‘O’ñ‚Å“™†‚ÅØ‚è‘Ö‚¦‚é
+        // ã€Œ== ã§è¶…éæ‰±ã„ã«ã™ã‚‹ã‹ã©ã†ã‹ã€ã®å¢ƒç•Œãƒ†ã‚¹ãƒˆ
+        // ã“ã“ã§ã¯ â€œstartOver=trueâ€ ã‚’ã€Œè¶…éã€ã¨ã¿ãªã™å‰æã§ç­‰å·ã§åˆ‡ã‚Šæ›¿ãˆã‚‹
         var ctx = new FakeCtx { deps = true, now = true, loc = true, startOver = false, PolicyTreatStartOverAsExpired = true };
         var rt = new EventRuntime(Make("E11"));
         rt.Evaluate(ctx); // Scheduled
         rt.Evaluate(ctx); // Available
-        // ‚¿‚å‚¤‚Ç“’B ¨ ’´‰ß‚ÉØ‚è‘Ö‚¦
+        // ã¡ã‚‡ã†ã©åˆ°é” â†’ è¶…éã«åˆ‡ã‚Šæ›¿ãˆ
         ctx.startOver = true;
         rt.Evaluate(ctx);
         Assert.AreEqual(EventState.Expired, rt.State);

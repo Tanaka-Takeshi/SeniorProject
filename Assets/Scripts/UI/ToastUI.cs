@@ -1,62 +1,48 @@
-// Assets/Scripts/UI/ToastUI.cs
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
-#if TMP_PRESENT || TEXTMESHPRO_PRESENT
-using TMPro;
-#endif
-
+[RequireComponent(typeof(CanvasGroup))]
 public class ToastUI : MonoBehaviour
 {
-#if TMP_PRESENT || TEXTMESHPRO_PRESENT
-    [SerializeField] private TMP_Text label;
-#else
-    [SerializeField] private Text label;
-#endif
-    [SerializeField] private CanvasGroup group;
-    [SerializeField] private float showSec = 1.2f;
-    [SerializeField] private float fadeSec = 0.35f;
+    [Header("Refs")]
+    public TextMeshProUGUI label;
+    public CanvasGroup group;
 
-    private Coroutine _co;
+    [Header("Timing")]
+    [SerializeField] float showSec = 1.8f;
+    [SerializeField] float fadeSec = 0.35f;
 
-    private void OnEnable()
+    Coroutine co;
+
+    void Awake()
     {
-        Game.Events.EventSignals.OnScheduled += id => Show($"Scheduled: {id}");
-        Game.Events.EventSignals.OnAvailable += id => Show($"Available: {id}");
-        Game.Events.EventSignals.OnStarted += id => Show($"Started: {id}");
-        Game.Events.EventSignals.OnCompleted += id => Show($"Completed: {id}");
-        Game.Events.EventSignals.OnFailed += (id, r) => Show($"Failed: {id} ({r})");
-        Game.Events.EventSignals.OnExpired += id => Show($"Expired: {id}");
+        if (!group) group = GetComponent<CanvasGroup>();
+        if (!label)
+        {
+            label = GetComponentInChildren<TextMeshProUGUI>();
+            if (!label) Debug.LogWarning("[ToastUI] TMP label が未割り当てです。子に TextMeshProUGUI を置いて割り当ててください。", this);
+        }
+        // 初期は非表示
+        if (group) group.alpha = 0f;
+        gameObject.SetActive(true); // Canvas 内で常時有効、alphaで制御
     }
 
-    private void OnDisable()
+    public void Show(string message)
     {
-        Game.Events.EventSignals.OnScheduled -= id => Show($"Scheduled: {id}");
-        Game.Events.EventSignals.OnAvailable -= id => Show($"Available: {id}");
-        Game.Events.EventSignals.OnStarted -= id => Show($"Started: {id}");
-        Game.Events.EventSignals.OnCompleted -= id => Show($"Completed: {id}");
-        Game.Events.EventSignals.OnFailed -= (id, r) => Show($"Failed: {id} ({r})");
-        Game.Events.EventSignals.OnExpired -= id => Show($"Expired: {id}");
+        if (!label || !group)
+        {
+            Debug.LogWarning("[ToastUI] 参照が未設定です (label / group)。", this);
+            return;
+        }
+        label.text = message;
+        if (co != null) StopCoroutine(co);
+        co = StartCoroutine(CoToast());
     }
 
-    private void Awake()
+    IEnumerator CoToast()
     {
-        if (group) { group.alpha = 0f; }
-    }
-
-    public void Show(string text)
-    {
-        if (label) label.text = text;
-        if (_co != null) StopCoroutine(_co);
-        _co = StartCoroutine(CoShow());
-    }
-
-    private IEnumerator CoShow()
-    {
-        if (!group) yield break;
-
-        // Fade In
+        // フェードイン
         float t = 0f;
         while (t < fadeSec)
         {
@@ -66,10 +52,15 @@ public class ToastUI : MonoBehaviour
         }
         group.alpha = 1f;
 
-        // Hold
-        yield return new WaitForSecondsRealtime(showSec);
+        // 表示維持
+        float hold = 0f;
+        while (hold < showSec)
+        {
+            hold += Time.unscaledDeltaTime;
+            yield return null;
+        }
 
-        // Fade Out
+        // フェードアウト
         t = 0f;
         while (t < fadeSec)
         {
@@ -78,5 +69,6 @@ public class ToastUI : MonoBehaviour
             yield return null;
         }
         group.alpha = 0f;
+        co = null;
     }
 }

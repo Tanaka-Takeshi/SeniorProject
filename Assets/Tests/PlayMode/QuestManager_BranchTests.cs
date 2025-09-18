@@ -1,8 +1,11 @@
+// Assets/Tests/PlayMode/QuestManager_BranchTests.cs
 using NUnit.Framework;
 using UnityEngine;
+using Game.Data;
 using Game.Events;
 using Game.Runtime;
-using Game.Tests;
+using Game.Tests;   // PlayModeTestBase / TestHelpers
+using System.Collections.Generic;
 
 [TestFixture]
 public class QuestManager_BranchTests : PlayModeTestBase
@@ -12,7 +15,7 @@ public class QuestManager_BranchTests : PlayModeTestBase
     [SetUp]
     public void Setup()
     {
-        BaseSetup(); // ‹¤’Ê‰Šú‰» (TestHelpersŒo—R)
+        BaseSetup(); // å…±é€šåˆæœŸåŒ–
         tracker = root.AddComponent<TestQuestTracker>();
     }
 
@@ -22,61 +25,74 @@ public class QuestManager_BranchTests : PlayModeTestBase
         BaseTearDown();
     }
 
+    // ===== ãƒ†ã‚¹ãƒˆå†…ãƒ˜ãƒ«ãƒ‘ï¼ˆæ–°ä»•æ§˜ç”¨ï¼šautoStartOnLocation å¯¾å¿œï¼‰ =====
+    private static EventData MakeEvent(
+        string id, string appear, string startDL, string endDL,
+        string areaId, float alt = 0.5f,
+        bool requiresBtn = true,
+        Game.Events.EventType type = Game.Events.EventType.Sub,
+        bool autoStartOnLocation = true
+    )
+    {
+        var e = ScriptableObject.CreateInstance<EventData>();
+        e.eventId = id;
+        e.type = type;
+        e.appearAt = appear;              // "HH:MM"
+        e.startDeadline = startDL;
+        e.endDeadline = endDL;
+        e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
+        e.requiresButtonPress = requiresBtn;
+        e.autoStartOnLocation = autoStartOnLocation; // â˜…æ–°ä»•æ§˜ãƒã‚¤ãƒ³ãƒˆ
+        e.dependencies = new List<string>();
+        e.altCompleteThreshold = alt;
+        e.weekdayRule = new WeekdayRule();
+        return e;
+    }
+
     [Test]
     public void BranchQuest_Completes_When_Either_Path_Finished()
     {
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
+        using var sig = new Game.Tests.TestHelpers.SignalCatcher(); // é€²è¡Œå‰ã«è³¼èª­
 
-        // E1 ¨ (E2 OR E3)
-        var e1 = MakeEvent("E1", "00:00", "00:10", "00:20", "Town", 0.5f, true, Game.Events.EventType.Main);
-        var e2 = MakeEvent("E2", "00:00", "00:35", "00:50", "Forest", 0.5f, true, Game.Events.EventType.Sub);
-        var e3 = MakeEvent("E3", "00:00", "00:10", "00:30", "Cave", 0.5f, true, Game.Events.EventType.Sub);
+        // E1 â†’ (E2 OR E3) ã®åˆ†å²
+        // E1 ã¯ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§é–‹å§‹ã•ã›ã‚‹ï¼ˆautoStartOnLocation=falseï¼‰
+        // E2/E3 ã¯ã€Œåˆ°é”ã§è‡ªå‹•é–‹å§‹ã€å¯èƒ½ã«ã—ã¦ãŠãï¼ˆtrueï¼‰
+        var e1 = MakeEvent("E1", "00:00", "00:10", "00:20", "Town",
+                           alt: 0.5f, requiresBtn: true, type: Game.Events.EventType.Main,
+                           autoStartOnLocation: false);
+        var e2 = MakeEvent("E2", "00:00", "00:35", "00:50", "Forest",
+                           alt: 0.5f, requiresBtn: true, type: Game.Events.EventType.Sub,
+                           autoStartOnLocation: true);
+        var e3 = MakeEvent("E3", "00:00", "00:10", "00:30", "Cave",
+                           alt: 0.5f, requiresBtn: true, type: Game.Events.EventType.Sub,
+                           autoStartOnLocation: true);
 
         InitEvents(e1, e2, e3);
 
-        // ƒNƒGƒXƒg’è‹`: ORğŒ
+        // ã‚¯ã‚¨ã‚¹ãƒˆå®šç¾©: ORæ¡ä»¶
         tracker.LoadQuest("Quest.Branch", new[] { "E1", "E2|E3" });
 
-        // --- E1 Š®—¹ ---
-        locator.SetArea("Town");
-
-        // Locked ¨ Scheduled
-        TickTo(em, clockGO, "00:00");      // Šù‚É0‚È‚ç•s—v‚¾‚ªˆÀ‘S‚Ì‚½‚ß
-        TestHelpers.Tick(em, 1);           // Locked¨Scheduled
-
-        // Scheduled ¨ Available
-        TestHelpers.Tick(em, 1);
-
-        // ‰Ÿ‰º ¨ InProgressi‰Ÿ‰º‚Í Available ”»’è‚Ì’¼‘Oor’¼ŒãƒtƒŒ[ƒ€‚Åj
+        // --- E1 å®Œäº†ï¼ˆæ–°ä»•æ§˜ï¼šæ™‚é–“ã§ Available â†’ ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§ Startï¼‰---
+        TestHelpers.AdvanceTo(em, clockGO, "00:00");                 // æ™‚é–“ã§ Available
         input.PressOnce();
-        TestHelpers.Tick(em, 1);           // Available¨InProgress
-
-        // i’»‚ğ1.0‚É
+        TestHelpers.Tick(em, 1);                                     // Available â†’ InProgress
         GetRuntime(em, "E1").SetProgress(1f);
+        TestHelpers.AdvanceTo(em, clockGO, "00:20");                 // End åˆ°é”ï¼ˆ>=ï¼‰
+        TestHelpers.Tick(em, 1);                                     // ç¢ºå®š
+        Game.Tests.TestHelpers.AssertState(em, "E1", EventState.Completed);
+        Assert.Contains("E1", tracker.CompletedSteps, "E1å®Œäº†ã§1ã‚¹ãƒ†ãƒƒãƒ—é€²ã‚€");
+        Assert.AreEqual("E2|E3", tracker.CurrentStepId, "æ¬¡ã®ã‚¹ãƒ†ãƒƒãƒ—ã¯ E2|E3");
 
-        // I—¹“’B ¨ Šm’èi“à•”‚Å2Tick“ü‚é‚ª”O‚Ì‚½‚ß’ÇTickj
-        TickTo(em, clockGO, "00:20");
-        TestHelpers.Tick(em, 1);
-
-        // ‚±‚±‚Å E1 ‚Í Completed ‚Ì‚Í‚¸
-        Game.Tests.TestHelpers.AssertState(em, "E1", Game.Events.EventState.Completed);
-        Assert.Contains("E1", tracker.CompletedSteps, "E1Š®—¹‚Å1ƒXƒeƒbƒvi‚Ş");
-        Assert.AreEqual("E2|E3", tracker.CurrentStepId, "Ÿ‚ÌƒXƒeƒbƒv‚Í E2|E3");
-
-        // --- ORğŒ: ¡‰ñ‚Í E2 ‚ğ‘I‚ñ‚Åi‚ß‚é ---
-
-        // E2 ŠJn
+        // --- ORæ¡ä»¶ï¼šä»Šå›ã¯ E2 ã‚’é¸ã‚“ã§é€²ã‚ã‚‹ ---
+        // ã™ã§ã«æ™‚é–“ã¯ååˆ†çµŒã£ã¦ã„ã‚‹ã®ã§ E2/E3 ã¯ Availableã€‚E2ã®å ´æ‰€ã¸åˆ°é”ã•ã›ã¦è‡ªå‹•é–‹å§‹ã€‚
         locator.SetArea("Forest");
-        TestHelpers.Tick(em, 1);  // Locked¨Scheduled
-        TestHelpers.Tick(em, 1);  // Scheduled¨Available
-        input.PressOnce();
-        TestHelpers.Tick(em, 1);  // Available¨InProgress
+        TestHelpers.Tick(em, 1);                                     // E2: Available â†’ InProgress
         GetRuntime(em, "E2").SetProgress(1f);
-        TickTo(em, clockGO, "00:50");
-        TestHelpers.Tick(em, 1);
+        TestHelpers.AdvanceTo(em, clockGO, "00:50");                 // E2 ã®çµ‚äº†åˆ»
+        TestHelpers.Tick(em, 1);                                     // ç¢ºå®š
 
-        // ÅIŠm”F
-        Assert.IsTrue(tracker.IsQuestCompleted, "E1 + (E2|E3) ’B¬‚ÅƒNƒGƒXƒgŠ®—¹");
+        // æœ€çµ‚ç¢ºèªï¼šE1 + E2 ã§ã‚¯ã‚¨ã‚¹ãƒˆå®Œäº†ï¼ˆE3 ã¯æœªç€æ‰‹ã®ã¾ã¾ã§OKï¼‰
+        Assert.IsTrue(tracker.IsQuestCompleted, "E1 + (E2|E3) é”æˆã§ã‚¯ã‚¨ã‚¹ãƒˆå®Œäº†");
         CollectionAssert.AreEqual(new[] { "E1", "E2" }, tracker.CompletedSteps);
     }
 }

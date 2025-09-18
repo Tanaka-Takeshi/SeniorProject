@@ -1,12 +1,12 @@
+// Assets/Tests/PlayMode/SaveLoad_PlayModeTests.cs
 using NUnit.Framework;
 using UnityEngine;
 using Game.Data;
 using Game.Events;
 using Game.Runtime;
 using Game.Tests;
-using System.Collections.Generic;
 
-public class SaveLoad_PlayModeTests : Game.Tests.PlayModeTestBase
+public class SaveLoad_PlayModeTests : PlayModeTestBase
 {
     TestQuestTracker tracker;
 
@@ -14,43 +14,40 @@ public class SaveLoad_PlayModeTests : Game.Tests.PlayModeTestBase
     public void Setup2()
     {
         BaseSetup();
+        // ï¼ˆå¿…è¦ãªã‚‰ï¼‰ãƒˆãƒ©ãƒƒã‚«ãƒ¼ã‚’ã¶ã‚‰ä¸‹ã’ã‚‹
         tracker = new GameObject("QuestTracker").AddComponent<TestQuestTracker>();
         tracker.transform.SetParent(root.transform, false);
     }
 
     [TearDown]
-    public void Teardown2()
-    {
-        BaseTearDown();
-    }
+    public void Teardown2() => BaseTearDown();
 
-    // ========== ƒP[ƒX1FInProgress‚Ì“r’†‚Å•Û‘¶¨•œŒ³‚µ‚ÄCompleted‚Ü‚Åi‚Ş ==========
+    // ========== ã‚±ãƒ¼ã‚¹1ï¼šInProgress ã®é€”ä¸­ã§ä¿å­˜ â†’ å¾©å…ƒã—ã¦ Completed ã¾ã§é€²ã‚€ ==========
     [Test]
     public void SaveLoad_ResumeMidProgress_ToCompleted()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("‚±‚ÌƒeƒXƒg‚Í UNITY_EDITOR ê—pAPI‚ğg—p‚µ‚Ü‚·B");
+        Assert.Inconclusive("ã“ã®ãƒ†ã‚¹ãƒˆã¯ UNITY_EDITOR å°‚ç”¨APIã‚’ä½¿ç”¨ã—ã¾ã™ã€‚");
         return;
 #endif
         using var sig = new TestHelpers.SignalCatcher();
 
-        // 00:10 ‚Å Available ¨ ŠJnAè‡’l 0.6B I—¹ 00:30
+        // 00:10 ã§é–‹å§‹ã€é–¾å€¤ 0.6ã€çµ‚äº† 00:30
         var ev = MakeEvent("E.Resume", "00:00", "00:10", "00:30", "Plaza", 0.6f, true, Game.Events.EventType.Sub);
         InitEvents(ev);
 
-        // ŠJn‚Ü‚Åi‚ß‚é
-        locator.SetArea("Plaza");
-        TestHelpers.Tick(em, 1); // Locked¨Scheduled
-        TestHelpers.Tick(em, 1); // Scheduled¨Available
+        // æ–°ä»•æ§˜ï¼šæ™‚é–“ã§ Availableã€‚é–‹å§‹ã¯ã€Œå ´æ‰€åˆ°é” or ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã€ã€‚
+        // ã“ã“ã§ã¯ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§é–‹å§‹ã•ã›ã‚‹ã€‚
+        TestHelpers.AdvanceTo(em, clockGO, "00:10");  // appearAt åˆ°é”
         input.PressOnce();
-        TestHelpers.Tick(em, 1); // Available¨InProgress
+        TestHelpers.Tick(em, 1);                      // Availableâ†’InProgress
+        Assert.AreEqual(EventState.InProgress, TestHelpers.GetRuntime(em, "E.Resume").State);
 
-        // i’»‚ğ”¼•ª‚É‚µ‚Ä•Û‘¶
+        // é€²æ—ã‚’é–¾å€¤ä»¥ä¸Šã«ã—ã¦ä¿å­˜
         TestHelpers.GetRuntime(em, "E.Resume").SetProgress(0.6f);
         var snapshot = em.ExportStateForTest();
 
-        // šV‚µ‚¢ EventManager ‚Éƒ[ƒhi‹^—ƒ[ƒhƒV[ƒ“j
-        var newRoot = new GameObject("NEWROOT");
+        // ç–‘ä¼¼ãƒ­ãƒ¼ãƒ‰ï¼šæ–°ã—ã„ EventManager/Clock/Locator/Input ã‚’ç”¨æ„ã—ã¦ Import
         var newEMGO = new GameObject("EventManager2");
         var newEM = newEMGO.AddComponent<EventManager>();
         var newClockGO = new GameObject("Clock2");
@@ -60,46 +57,43 @@ public class SaveLoad_PlayModeTests : Game.Tests.PlayModeTestBase
         var newInputGO = new GameObject("Input2");
         var newInput = newInputGO.AddComponent<TestInputProxy>();
 
-        // İ’è‚ÆDI
         var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
         settings.dayLengthSeconds = 1440f;
-        TestHelpers.Inject(newEM, newClock, newLoc, newInput, settings);
+        TestHelpers.Inject(newEM, newClock, newLoc, newInput, settings);  // ä¾å­˜æ³¨å…¥ï¼ˆDIï¼‰:contentReference[oaicite:2]{index=2}
 
-        // “¯‚¶ƒCƒxƒ“ƒg’è‹`‚ğ“Ë‚Á‚ŞiIDˆê’v‚ª•K—vj
+        // å®šç¾©ï¼ˆåŒä¸€IDï¼‰ã‚’ã‚»ãƒƒãƒˆã—ã¦ã‚¹ãƒŠãƒƒãƒ—ã‚·ãƒ§ãƒƒãƒˆé©ç”¨
         newEM.InitializeForTest(new[] { ev });
-
-        // ƒXƒiƒbƒvƒVƒ‡ƒbƒg“K—p
         newEM.ImportStateForTest(snapshot);
 
-        // Œp‘±FI—¹‚Ö
-        newLoc.SetArea("Plaza");
+        // çµ‚äº†åˆ»ã¸é€²ã‚ã¦ç¢ºå®š
         TestHelpers.AdvanceTo(newEM, newClockGO, "00:30");
         TestHelpers.Tick(newEM, 1);
 
-        // Š®—¹ƒVƒOƒiƒ‹o‚Ä‚¢‚é‚Í‚¸
-        Assert.AreEqual("E.Resume", sig.Completed);
+        Assert.AreEqual("E.Resume", sig.Completed, "å¾©å…ƒå¾Œã‚‚æ­£å¸¸ã« Completed ã¸åˆ°é”ã™ã‚‹ã¯ãš");
     }
 
-    // ========== ƒP[ƒX2FAvailable‚Å•Û‘¶¨•œŒ³‚µ‚ÄŠJn¨MissedStart‚É‚È‚ç‚È‚¢ ==========
+    // ========== ã‚±ãƒ¼ã‚¹2ï¼šAvailable ã§ä¿å­˜ â†’ å¾©å…ƒã—ã¦é–‹å§‹ï¼ˆMissedStart ã«ãªã‚‰ãªã„ï¼‰ ==========
     [Test]
     public void SaveLoad_ResumeFromAvailable_StartsNormally()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("‚±‚ÌƒeƒXƒg‚Í UNITY_EDITOR ê—pAPI‚ğg—p‚µ‚Ü‚·B");
+        Assert.Inconclusive("ã“ã®ãƒ†ã‚¹ãƒˆã¯ UNITY_EDITOR å°‚ç”¨APIã‚’ä½¿ç”¨ã—ã¾ã™ã€‚");
         return;
 #endif
+        // appearAt=00:00, startDL=00:20, end=00:40
         var ev = MakeEvent("E.Available", "00:00", "00:20", "00:40", "Hill", 0.5f, true, Game.Events.EventType.Sub);
         InitEvents(ev);
 
-        // Available ‚Ü‚Å
-        locator.SetArea("Hill");
-        TestHelpers.Tick(em, 1); // Scheduled
-        TestHelpers.Tick(em, 1); // Available
+        // æ™‚é–“ã§ Availableï¼ˆå ´æ‰€ã¯ä¸å•ï¼‰
+        using var sig = new TestHelpers.SignalCatcher();
+        TestHelpers.AdvanceTo(em, clockGO, "00:00");
+        Assert.AreEqual("E.Available", sig.Available);
+        Assert.AreEqual(EventState.Available, TestHelpers.GetRuntime(em, "E.Available").State);
 
-        // •Û‘¶
+        // ã‚¹ãƒŠãƒƒãƒ—ã‚·ãƒ§ãƒƒãƒˆä¿å­˜
         var snapshot = em.ExportStateForTest();
 
-        // V‹Kƒ}ƒl[ƒWƒƒ‚É“¯‚¶ƒCƒxƒ“ƒg‚ğ—pˆÓ‚µ‚Ä•œŒ³
+        // æ–°è¦ãƒãƒãƒ¼ã‚¸ãƒ£ã«å¾©å…ƒ
         var newEMGO = new GameObject("EventManager3");
         var newEM = newEMGO.AddComponent<EventManager>();
         var newClockGO = new GameObject("Clock3");
@@ -113,42 +107,39 @@ public class SaveLoad_PlayModeTests : Game.Tests.PlayModeTestBase
         settings.dayLengthSeconds = 1440f;
         TestHelpers.Inject(newEM, newClock, newLoc, newInput, settings);
         newEM.InitializeForTest(new[] { ev });
-
         newEM.ImportStateForTest(snapshot);
 
-        // ‚·‚®ŠJn‚Å‚«‚é
-        newLoc.SetArea("Hill");
+        // å¾©å…ƒç›´å¾Œã«é–‹å§‹ãƒˆãƒªã‚¬ï¼ˆã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆï¼‰â†’ Start ã«ãªã‚‹ã“ã¨ï¼ˆMissedStart ã—ãªã„ï¼‰
         newInput.PressOnce();
-        TestHelpers.Tick(newEM, 1); // Start
-        Game.Tests.TestHelpers.AssertState(newEM, "E.Available", Game.Events.EventState.InProgress);
+        TestHelpers.Tick(newEM, 1);
+        TestHelpers.AssertState(newEM, "E.Available", EventState.InProgress);
     }
 
-    // ========== ƒP[ƒX3FFailed ’¼‘O‚Å•Û‘¶¨•œŒ³‚µ‚Ä‚à Failed ‚É‚È‚é ==========
+    // ========== ã‚±ãƒ¼ã‚¹3ï¼šFailed ç›´å‰ã§ä¿å­˜ â†’ å¾©å…ƒã—ã¦ã‚‚åŒã˜å¤±æ•—ï¼ˆMissedEndLowProgressï¼‰ã«ãªã‚‹ ==========
     [Test]
     public void SaveLoad_ResumeJustBeforeFail_StillFails()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("‚±‚ÌƒeƒXƒg‚Í UNITY_EDITOR ê—pAPI‚ğg—p‚µ‚Ü‚·B");
+        Assert.Inconclusive("ã“ã®ãƒ†ã‚¹ãƒˆã¯ UNITY_EDITOR å°‚ç”¨APIã‚’ä½¿ç”¨ã—ã¾ã™ã€‚");
         return;
 #endif
         using var sig = new TestHelpers.SignalCatcher();
 
-        // I—¹ 00:15Aè‡’l 0.7Ai’»’á‚¢‚Ü‚Ü
+        // çµ‚äº† 00:15ã€é–¾å€¤ 0.7ï¼ˆä½é€²æ—ã§å¤±æ•—ã¸ï¼‰
         var ev = MakeEvent("E.Fail", "00:00", "00:05", "00:15", "Dock", 0.7f, true, Game.Events.EventType.Sub);
         InitEvents(ev);
 
-        locator.SetArea("Dock");
-        TestHelpers.Tick(em, 1); // Scheduled
-        TestHelpers.Tick(em, 1); // Available
+        // æ™‚é–“ã§ Available â†’ ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆã§é–‹å§‹ â†’ é€²æ—ä½ã„ã¾ã¾
+        TestHelpers.AdvanceTo(em, clockGO, "00:05");
         input.PressOnce();
         TestHelpers.Tick(em, 1); // Start
         TestHelpers.GetRuntime(em, "E.Fail").SetProgress(0.2f);
 
-        // ¸”s’¼‘O‚Ìi00:14j‚Å•Û‘¶
+        // å¤±æ•—ç›´å‰ï¼ˆ00:14ï¼‰ã§ä¿å­˜
         clock.Jump(14f);
         var snapshot = em.ExportStateForTest();
 
-        // V‹K‚É•œŒ³
+        // æ–°è¦ã¸å¾©å…ƒ
         var newEMGO = new GameObject("EventManager4");
         var newEM = newEMGO.AddComponent<EventManager>();
         var newClockGO = new GameObject("Clock4");
@@ -164,11 +155,13 @@ public class SaveLoad_PlayModeTests : Game.Tests.PlayModeTestBase
         newEM.InitializeForTest(new[] { ev });
         newEM.ImportStateForTest(snapshot);
 
-        // 1•ªi‚ß‚é ¨ ¸”s
+        // çµ‚äº†åˆ»ã¸é€²ã‚ã‚‹ â†’ Failed(MissedEndLowProgress) ã«åˆ°é”ã™ã‚‹
         TestHelpers.AdvanceTo(newEM, newClockGO, "00:15");
         TestHelpers.Tick(newEM, 1);
-        Assert.IsTrue(sig.Failed.HasValue && sig.Failed.Value.id == "E.Fail"
-                      && sig.Failed.Value.reason == FailedReason.MissedEndLowProgress,
-                      "•œŒ³Œã‚à“¯‚¶¸”s‚É“’B‚·‚é‚Í‚¸");
+
+        Assert.IsTrue(sig.Failed.HasValue &&
+                      sig.Failed.Value.id == "E.Fail" &&
+                      sig.Failed.Value.reason == FailedReason.MissedEndLowProgress,
+                      "å¾©å…ƒå¾Œã‚‚åŒã˜å¤±æ•—ã«åˆ°é”ã™ã‚‹ã¯ãš");
     }
 }

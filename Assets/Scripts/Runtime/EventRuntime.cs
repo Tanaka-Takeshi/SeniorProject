@@ -14,6 +14,9 @@ namespace Game.Runtime
         // 内部タイマー（凍結中は評価しない）
         private bool _timerFrozen = false;
 
+        // ★追加：Available入り直後、目的地に既に居たら自動開始を一旦ブロックするためのフラグ
+        private bool _allowAutoStartByLocation = true;
+
         public EventRuntime(Game.Data.EventData data) { Data = data; }
 
         public void SetProgress(float value)
@@ -68,31 +71,19 @@ namespace Game.Runtime
                             break;
                         }
 
-                        // ★新仕様：時間だけで Available（場所/入力の可否は見ない）
+                        // 時間だけで Available（場所/入力の可否は見ない）
                         State = EventState.Available;
                         EventSignals.RaiseAvailable(Data.eventId);
+
+                        // ★Availableに入った瞬間に既に目的地に居たら、自動開始を一旦ブロック
+                        //   → 一度離れて再入場した時だけ自動開始を許可する
+                        _allowAutoStartByLocation = !ctx.LocationSatisfied(Data.location);
                         break;
                     }
 
                 case EventState.Available:
                     {
-                        // ★新仕様：開始条件は「場所到達」または「インタラクト」
-                        //   - 場所到達は Data.autoStartOnLocation が true のときのみ許可
-                        //   - インタラクトは 1 フレーム消費（TryConsumeStartInput）
-                        bool byLocation = Data.autoStartOnLocation && ctx.LocationSatisfied(Data.location);
-                        bool byInteract = ctx.TryConsumeStartInput();
-
-                        // （補足）requiresButtonPress は互換のため残存。
-                        //  インタラクト必須のイベントにしたい場合は
-                        //  autoStartOnLocation=false にして byLocation を無効化してください。
-                        if (byLocation || byInteract)
-                        {
-                            State = EventState.InProgress;
-                            EventSignals.RaiseStarted(Data.eventId);
-                            break; // このフレームは開始で終える
-                        }
-
-                        // 開始しないまま開始期限を超えたら失敗（またはExpiredポリシー）
+                        // ① まず開始期限超過をチェック（最優先）
                         if (ctx.StartDeadlineExceeded(Data.startDeadline))
                         {
                             if (ctx.PolicyTreatStartOverAsExpired)
@@ -106,7 +97,30 @@ namespace Game.Runtime
                                 FailedReason = FailedReason.MissedStart;
                                 EventSignals.RaiseFailed(Data.eventId, FailedReason);
                             }
+                            break;
                         }
+
+                        // ② 「その場に居たまま」だとブロック継続。離れたら許可に戻す
+                        if (!_allowAutoStartByLocation && !ctx.LocationSatisfied(Data.location))
+                            _allowAutoStartByLocation = true;
+
+                        // ③ 開始条件：到達 or 入力
+                        bool byLocation = Data.autoStartOnLocation
+                                          && _allowAutoStartByLocation
+                                          && ctx.LocationSatisfied(Data.location);
+
+                        // 入力開始は requiresButtonPress が true のときのみ
+                        bool byInteract = Data.requiresButtonPress
+                                          && ctx.TryConsumeStartInput();
+
+                        if (byLocation || byInteract)
+                        {
+                            State = EventState.InProgress;
+                            EventSignals.RaiseStarted(Data.eventId);
+                            break; // このフレームは開始で終える
+                        }
+
+                        // 何もなければ Available 継続
                         break;
                     }
 
@@ -156,7 +170,7 @@ namespace Game.Runtime
 #endif
     }
 
-    // Manager が提供する評価コンテキスト（既存そのまま）
+    // そのまま（インターフェース変更なし）
     public interface IEvalContext
     {
         bool IsGloballyPaused { get; }

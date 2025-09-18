@@ -1,235 +1,133 @@
 // Assets/Tests/PlayMode/EventFlow_PlayModeTests.cs
 using NUnit.Framework;
-using UnityEngine;
 using Game.Data;
 using Game.Events;
-using Game.Runtime;
-using System.Collections.Generic;
-using Game.Tests;
-using System;
+using Game.Tests;     // PlayModeTestBase / TestHelpers
+using UnityEngine;
 
-public class EventFlow_PlayModeTests
+namespace Game.Tests.PlayMode
 {
-    GameObject root, emGO, clockGO, locGO, inputGO;
-    EventManager em;
-    SimpleClock clock;
-    SimpleLocationResolver locator;
-    TestInputProxy input;
-
-    float _prevTimeScale;
-
-    [SetUp]
-    public void SetUp()
+    /// <summary>
+    /// 新仕様（時間でAvailable → 場所 or インタラクトでStart）に対応したプレイモード基本動作テスト。
+    /// </summary>
+    public class EventFlow_PlayModeTests : PlayModeTestBase
     {
-        // 実時間停止（SimpleClock は Jump のみで進む）
-        _prevTimeScale = TestHelpers.PauseRealtime();
+        [SetUp] public void Setup2() => BaseSetup();
+        [TearDown] public void Teardown2() => BaseTearDown();
 
-        root = new GameObject("ROOT");
-
-        clockGO = new GameObject("Clock");
-        clock = clockGO.AddComponent<SimpleClock>();
-        clockGO.transform.SetParent(root.transform, false);
-
-        locGO = new GameObject("Locator");
-        locator = locGO.AddComponent<SimpleLocationResolver>();
-        locGO.transform.SetParent(root.transform, false);
-
-        inputGO = new GameObject("Input");
-        input = inputGO.AddComponent<TestInputProxy>();
-        inputGO.transform.SetParent(root.transform, false);
-
-        emGO = new GameObject("EventManager");
-        em = emGO.AddComponent<EventManager>();
-        emGO.transform.SetParent(root.transform, false);
-
-        // GlobalSettings 注入（分＝秒換算 1日=1440）
-        var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
-        settings.dayLengthSeconds = 1440f;
-
-        // 依存（DI）注入
-        TestHelpers.Inject(em, clock, locator, input, settings);
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        // 念のため Pause フラグを解除して次のテストに影響しないようにする
-        try
+        private static EventData MakeSO(string id, string appear, string startDL, string endDL,
+                                        string areaId, bool autoStartOnLocation, bool requiresButtonPress,
+                                        Game.Events.EventType type = Game.Events.EventType.Sub, float alt = 0.5f)
         {
-            Game.Tests.TestHelpers.SetPaused(em, false);
-        }
-        catch
-        {
-            // em が破棄済み、または TestHelpers が見えないケースでは無視
+            var e = ScriptableObject.CreateInstance<EventData>();
+            e.eventId = id;
+            e.type = type;
+            e.appearAt = appear;          // "HH:MM"（分=秒）
+            e.startDeadline = startDL;
+            e.endDeadline = endDL;
+            e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
+            e.autoStartOnLocation = autoStartOnLocation;
+            e.requiresButtonPress = requiresButtonPress;
+            e.altCompleteThreshold = alt;
+            e.dependencies = new System.Collections.Generic.List<string>();
+            e.weekdayRule = new WeekdayRule();
+            return e;
         }
 
-        UnityEngine.Object.DestroyImmediate(root);
-        Time.timeScale = _prevTimeScale; // 元に戻す
-    }
+        [Test]
+        public void Available_is_time_only_then_Start_by_Location()
+        {
+            // イベント登録：場所到達で自動開始を許可
+            var ev = MakeSO("2.1", "08:00", "09:00", "10:00", "Square",
+                            autoStartOnLocation: true, requiresButtonPress: true, type: Game.Events.EventType.Main);
+            InitEvents(ev);
 
+            // ★ シグナルはここでHook（時間を進める前）
+            using var sig = new TestHelpers.SignalCatcher();
 
-    // ===== ヘルパ =====
-    private void InitEvents(params EventData[] eventsToUse)
-    {
-        em.InitializeForTest(eventsToUse);
-        // 初期フレームの取りこぼし防止（時刻0で一度評価）
-        clock.Jump(0f);
-    }
+            // appearAt 到達 → 場所にいなくても Available
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual("2.1", sig.Available, "時間のみで Available になるはず");
+            Assert.IsNull(sig.Started, "まだ開始していない（場所未到達）");
 
-    private EventData MakeEvent(string id, string appear, string startDL, string endDL, string areaId, float alt = 0.5f, bool requiresBtn = true)
-    {
-        var e = ScriptableObject.CreateInstance<EventData>();
-        e.eventId = id;
-        e.type = Game.Events.EventType.Sub;
-        e.appearAt = appear;          // "HH:MM"（分=秒）
-        e.startDeadline = startDL;
-        e.endDeadline = endDL;
-        e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
-        e.requiresButtonPress = requiresBtn;
-        e.dependencies = new List<string>();
-        e.altCompleteThreshold = alt;
-        e.weekdayRule = new WeekdayRule();
-        return e;
-    }
+            // 場所到達で Start
+            locator.SetArea("Square");
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual("2.1", sig.Started, "場所到達で開始するはず");
+        }
 
-    // ===== テスト =====
-    [Test]
-    public void GoldenPath_Scheduled_Available_InProgress_Completed()
-    {
-        var ev = MakeEvent("Sub.Test", "00:10", "01:00", "02:00", "Town/Plaza", 0.5f);
-        InitEvents(ev);
+        [Test]
+        public void Start_by_Interact_when_AutoStartOff()
+        {
+            // イベント登録：場所到達では開始しない（インタラクト必須）
+            var ev = MakeSO("2.2", "08:00", "09:00", "10:00", "Square",
+                            autoStartOnLocation: false, requiresButtonPress: true);
+            InitEvents(ev);
 
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
+            using var sig = new TestHelpers.SignalCatcher();
 
-        // 00:10 まで進めてから開始操作
-        clock.Jump(10f);
-        em.EvaluateFrame();
+            // 時間で Available（場所不問）
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual("2.2", sig.Available);
+            Assert.IsNull(sig.Started);
 
-        locator.SetArea("Town/Plaza");
-        Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Test", () => input.PressOnce());
+            // 同期しても開始しない（autoStartOff）
+            locator.SetArea("Square");
+            TestHelpers.Tick(em, 1);
+            Assert.IsNull(sig.Started, "autoStartOff なので場所到達だけでは開始しない");
 
-        // 閾値超えさせる
-        Game.Tests.TestHelpers.GetRuntime(em, "Sub.Test").SetProgress(0.8f);
+            // インタラクトで開始
+            input.PressOnce();
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual("2.2", sig.Started);
+        }
 
-        // End で Completed
-        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "02:00");
-        Assert.AreEqual("Sub.Test", sig.Completed);
-    }
+        [Test]
+        public void MissedStart_when_no_trigger_until_deadline()
+        {
+            var ev = MakeSO("2.3", "08:00", "08:30", "10:00", "Square",
+                            autoStartOnLocation: true, requiresButtonPress: true);
+            InitEvents(ev);
 
-    [Test]
-    public void MissedEnd_Fails_When_Progress_Below_Threshold()
-    {
-        var ev = MakeEvent("Sub.Fail", "00:00", "00:05", "00:10", "Field", 0.6f);
-        InitEvents(ev);
+            using var sig = new TestHelpers.SignalCatcher();
 
-        Game.Events.FailedReason? got = null;
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
-        EventSignals.OnFailed += (id, r) => { if (id == "Sub.Fail") got = r; };
+            // 時間で Available（何もせず放置）
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            Assert.AreEqual("2.3", sig.Available);
+            Assert.IsNull(sig.Started);
 
-        locator.SetArea("Field");
-        Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Fail", () => input.PressOnce());
+            // 開始期限を超過させる → MissedStart
+            // StartDeadlineExceeded は now > deadline のとき true になるので
+            // 「08:30」ちょうどではなく「08:31」など deadline を超える時刻へ進める
+            TestHelpers.AdvanceTo(em, clockGO, "08:31");
 
-        // 進捗は閾値未満のまま
-        Game.Tests.TestHelpers.GetRuntime(em, "Sub.Fail").SetProgress(0.2f);
+            Assert.AreEqual(("2.3", FailedReason.MissedStart), sig.Failed);
+        }
 
-        // 終了到達 → Failed(MissedEndLowProgress)
-        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:10");
-        Assert.AreEqual(Game.Events.FailedReason.MissedEndLowProgress, got);
-    }
+        [Test]
+        public void Complete_or_Fail_on_End_by_Progress()
+        {
+            var ev = MakeSO("2.4", "08:00", "09:00", "10:00", "Square",
+                            autoStartOnLocation: true, requiresButtonPress: true);
+            InitEvents(ev);
 
+            using var sig = new TestHelpers.SignalCatcher();
 
-    [Test]
-    public void Expired_When_Miss_StartWindow()
-    {
-        var ev = MakeEvent("Sub.Expire", "00:00", "00:05", "00:20", "Field", 0.5f);
-        InitEvents(ev);
+            // Available → Start（インタラクト）
+            TestHelpers.AdvanceTo(em, clockGO, "08:00");
+            input.PressOnce();
+            TestHelpers.Tick(em, 1);
+            Assert.AreEqual("2.4", sig.Started);
 
-        Game.Events.FailedReason? got = null;
-        using var sig = new TestHelpers.SignalCatcher();
-        EventSignals.OnFailed += (id, r) => { if (id == "Sub.Expire") got = r; };
+            // (a) 閾値以上で Completed
+            GetRuntime(em, "2.4").SetProgress(0.7f);
+            TestHelpers.AdvanceTo(em, clockGO, "10:00");
+            Assert.AreEqual("2.4", sig.Completed);
 
-        // 場所にいない → Availableにならないまま開始期限超過
-        TestHelpers.AdvanceTo(em, clockGO, "00:06");
-        Assert.AreEqual(Game.Events.FailedReason.MissedStart, got);
-    }
-
-    // 3) requiresButtonPress=false の自動開始
-    [Test]
-    public void AutoStart_When_ButtonNotRequired()
-    {
-        var ev = MakeEvent("Sub.Auto", "00:00", "00:10", "00:20", "A");
-        ev.requiresButtonPress = false;
-        InitEvents(ev);
-
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
-
-        locator.SetArea("A");
-        Game.Tests.TestHelpers.EnsureAutoStarted(em, "Sub.Auto");
-
-        // クリアに必要なら進捗を設定
-        Game.Tests.TestHelpers.GetRuntime(em, "Sub.Auto").SetProgress(1f);
-
-        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        Assert.AreEqual("Sub.Auto", sig.Started, "AutoStartで InProgress になっているはず");
-        Assert.AreEqual("Sub.Auto", sig.Completed, "終期で Completed になるはず");
-    }
-
-
-    // 4) 進捗＝閾値ちょうどで Completed
-    [Test]
-    public void Completed_When_Progress_Equals_Threshold()
-    {
-        var ev = MakeEvent("Sub.Equal", "00:00", "00:10", "00:20", "A", 0.6f);
-        InitEvents(ev);
-
-        using var sig = new Game.Tests.TestHelpers.SignalCatcher();
-
-        // 場所をセット
-        locator.SetArea("A");
-
-        // ★ ヘルパで確実に Started まで進める
-        Game.Tests.TestHelpers.EnsureStarted(em, "Sub.Equal", () => input.PressOnce());
-
-        // 進捗＝閾値ちょうど
-        Game.Tests.TestHelpers.GetRuntime(em, "Sub.Equal").SetProgress(0.6f);
-
-        // 終了到達 → Completed
-        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:20");
-        Assert.AreEqual("Sub.Equal", sig.Completed, "閾値ちょうどで Completed になるはず");
-    }
-
-
-    // 5) ポーズで評価を止める（IsGloballyPaused）
-    [Test]
-    public void Pause_Stops_Evaluation()
-    {
-        var ev = MakeEvent("Sub.Pause", "00:00", "00:10", "00:20", "A");
-        InitEvents(ev);
-
-        using var sig = new TestHelpers.SignalCatcher();
-
-        // Pause ON（最初に）
-        TestHelpers.SetPaused(em, true);
-
-        // 評価しても Scheduled は出ない
-        TestHelpers.AdvanceTo(em, clockGO, "00:00");
-        Assert.IsNull(sig.Scheduled, "Pause中はScheduledが発火しないはず");
-        TestHelpers.AssertState(em, "Sub.Pause", Game.Events.EventState.Locked);
-
-        // Pause OFF → 初めて進む
-        TestHelpers.SetPaused(em, false);
-        TestHelpers.Tick(em);
-        Assert.AreEqual("Sub.Pause", sig.Scheduled, "Pause解除後にScheduledが発火するはず");
-    }
-
-    // デバッグ用（必要なときだけ使う）
-    private void WireLogs()
-    {
-        EventSignals.OnScheduled += id => Debug.Log("[SIG] Scheduled " + id);
-        EventSignals.OnAvailable += id => Debug.Log("[SIG] Available " + id);
-        EventSignals.OnStarted += id => Debug.Log("[SIG] Started " + id);
-        EventSignals.OnCompleted += id => Debug.Log("[SIG] Completed " + id);
-        EventSignals.OnFailed += (id, r) => Debug.Log("[SIG] Failed " + id + " (" + r + ")");
-        EventSignals.OnExpired += id => Debug.Log("[SIG] Expired " + id);
+            // (b) 閾値未満で Failed(MissedEndLowProgress)
+            GetRuntime(em, "2.4").RestoreForTest(EventState.InProgress, FailedReason.None, 0.3f);
+            TestHelpers.AdvanceTo(em, clockGO, "10:00");
+            Assert.AreEqual(("2.4", FailedReason.MissedEndLowProgress), sig.Failed);
+        }
     }
 }
