@@ -11,9 +11,9 @@ namespace Game.Runtime
         [SerializeField] private List<Game.Data.EventData> eventSources = new();
 
         private readonly Dictionary<string, EventRuntime> _events = new();
-        private readonly List<EventRuntime> _activeWatch = new();               // “¯ŠÄ‹ãŒÀŠÇ—
+        private readonly List<EventRuntime> _activeWatch = new();               // åŒæ™‚ç›£è¦–ä¸Šé™ç®¡ç†
 
-        // ’Ç‰ÁFƒeƒXƒg‚âÀ‘•‚©‚ç’“ü‚·‚é‚½‚ß‚ÌƒtƒB[ƒ‹ƒh
+        // è¿½åŠ ï¼šãƒ†ã‚¹ãƒˆã‚„å®Ÿè£…ã‹ã‚‰æ³¨å…¥ã™ã‚‹ãŸã‚ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰
         [SerializeField] private MonoBehaviour clockBehaviour;        // IClock
         [SerializeField] private MonoBehaviour locationBehaviour;     // ILocationResolver
         [SerializeField] private MonoBehaviour inputBehaviour;        // IInputProxy
@@ -30,7 +30,7 @@ namespace Game.Runtime
         public IClock ClockRef => Clock;
 
 
-        // ƒ‰ƒCƒtƒTƒCƒNƒ‹
+        // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«
         private void Awake()
         {
             foreach (var e in eventSources)
@@ -38,7 +38,7 @@ namespace Game.Runtime
                 if (string.IsNullOrEmpty(e.eventId)) continue;
                 var rt = new EventRuntime(e);
                 _events[e.eventId] = rt;
-                // •K—v‚È‚ç‹N“®‚É Locked¨Scheduled ”»’è‚ğˆê“xÀ{
+                // å¿…è¦ãªã‚‰èµ·å‹•æ™‚ã« Lockedâ†’Scheduled åˆ¤å®šã‚’ä¸€åº¦å®Ÿæ–½
             }
         }
 
@@ -48,14 +48,14 @@ namespace Game.Runtime
             EvaluateAllInOrder();
         }
 
-        // –ˆƒtƒŒ[ƒ€‚Ìæ“ª‚ÅŒÄ‚Ô
+        // æ¯ãƒ•ãƒ¬ãƒ¼ãƒ ã®å…ˆé ­ã§å‘¼ã¶
         private void BeginEvalFrame()
         {
             _startEdgeThisFrame = InputProxy != null && InputProxy.StartPressedThisFrame();
             _startConsumed = false;
         }
 
-        // IEvalContext À‘•
+        // IEvalContext å®Ÿè£…
         public bool TryConsumeStartInput()
         {
             if (!_startEdgeThisFrame || _startConsumed) return false;
@@ -64,13 +64,13 @@ namespace Game.Runtime
         }
         private void EvaluateAllInOrder()
         {
-            // 1ƒpƒX–Ú: Main ‚Ì‚İ
+            // 1ãƒ‘ã‚¹ç›®: Main ã®ã¿
             foreach (var rt in _events.Values)
             {
                 if (rt.Data.type == Game.Events.EventType.Main)
                     rt.Evaluate(this);
             }
-            // 2ƒpƒX–Ú: Main ˆÈŠOiSub/World/Tutorial ‚È‚Çj
+            // 2ãƒ‘ã‚¹ç›®: Main ä»¥å¤–ï¼ˆSub/World/Tutorial ãªã©ï¼‰
             foreach (var rt in _events.Values)
             {
                 if (rt.Data.type != Game.Events.EventType.Main)
@@ -78,15 +78,15 @@ namespace Game.Runtime
             }
         }
 
-        // ƒeƒXƒg—p
-        // 1) 1ƒtƒŒ[ƒ€•]‰¿
+        // ãƒ†ã‚¹ãƒˆç”¨
+        // 1) 1ãƒ•ãƒ¬ãƒ¼ãƒ è©•ä¾¡
         public void EvaluateFrame()
         {
             BeginEvalFrame();
             EvaluateAllInOrder();
         }
 
-        // 2) ƒeƒXƒg/ŠO•”—p ‰Šú‰»iAwake‘Š“–j
+        // 2) ãƒ†ã‚¹ãƒˆ/å¤–éƒ¨ç”¨ åˆæœŸåŒ–ï¼ˆAwakeç›¸å½“ï¼‰
         public void InitializeForTest(System.Collections.Generic.IEnumerable<Game.Data.EventData> eventsToUse)
         {
             _events.Clear();
@@ -104,17 +104,17 @@ namespace Game.Runtime
             if (sp.Length < 2) return 0f;
             int hh = int.Parse(sp[0]);
             int mm = int.Parse(sp[1]);
-            return (hh * 60 + mm); // •ª•bŠ·Z
+            return (hh * 60 + mm); // åˆ†ï¼ç§’æ›ç®—
         }
 
-        // IEvalContextÀ‘•iƒvƒƒWƒFƒNƒg‚É‡‚í‚¹‚Ä‹ï‘Ì‰»j
+        // IEvalContextå®Ÿè£…ï¼ˆãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã«åˆã‚ã›ã¦å…·ä½“åŒ–ï¼‰
         [SerializeField] private bool testPause = false;
         public bool IsGloballyPaused => testPause;
         public void SetPausedForTest(bool paused) => testPause = paused;
 
-        public bool PolicyTreatStartOverAsExpired => false;     // ŠúŒÀØ‚ê”»’è
+        public bool PolicyTreatStartOverAsExpired => false;     // æœŸé™åˆ‡ã‚Œåˆ¤å®š
 
-        public bool DependenciesSatisfied(List<string> ids)     // ˆË‘¶æƒCƒxƒ“ƒg‚ª’B¬‚³‚ê‚Ä‚¢‚é‚©”»’è
+        public bool DependenciesSatisfied(List<string> ids)     // ä¾å­˜å…ˆã‚¤ãƒ™ãƒ³ãƒˆãŒé”æˆã•ã‚Œã¦ã„ã‚‹ã‹åˆ¤å®š
         {
             if (ids == null || ids.Count == 0) return true;
             foreach (var id in ids)
@@ -125,42 +125,42 @@ namespace Game.Runtime
             return true;
         }
 
-        public bool NowReached(string gameDateTime)             // ŠÔ“’B‚Ì”»’è
+        public bool NowReached(string gameDateTime)             // æ™‚é–“åˆ°é”ã®åˆ¤å®š
         {
             var now = Clock != null ? Clock.NowGameSeconds : 0f;
             return now >= ParseGameSeconds(gameDateTime);
         }
 
-        public bool StartDeadlineExceeded(string gameDateTime)  // ŠJnŠúŒÀ’´‰ß”»’è
+        public bool StartDeadlineExceeded(string gameDateTime)  // é–‹å§‹æœŸé™è¶…éåˆ¤å®š
         {
             var now = Clock != null ? Clock.NowGameSeconds : 0f;
             return now > ParseGameSeconds(gameDateTime);
         }
-        public bool EndDeadlineReached(string gameDateTime)     // I—¹ŠúŒÀ’´‰ß”»’è
+        public bool EndDeadlineReached(string gameDateTime)     // çµ‚äº†æœŸé™è¶…éåˆ¤å®š
         {
             var now = Clock != null ? Clock.NowGameSeconds : 0f;
             return now >= ParseGameSeconds(gameDateTime);
         }
 
-        public bool CalendarAllowed(Game.Events.WeekdayRule rule)   // ƒJƒŒƒ“ƒ_[‹–‰Â
+        public bool CalendarAllowed(Game.Events.WeekdayRule rule)   // ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼è¨±å¯
         {
-            // ToDo : globalSettings.useWeekdaySystem ‚ÅØ‘Ö
+            // ToDo : globalSettings.useWeekdaySystem ã§åˆ‡æ›¿
             return true;
         }
 
-        public bool LocationSatisfied(Game.Events.LocationRef loc)  // ”­¶êŠ‚É‚¢‚é‚©‚Ì”»’è
+        public bool LocationSatisfied(Game.Events.LocationRef loc)  // ç™ºç”Ÿå ´æ‰€ã«ã„ã‚‹ã‹ã®åˆ¤å®š
         {
             return Locator == null || Locator.IsSatisfied(loc);
         }
-        public bool InteractionPossible(Game.Data.EventData data)             // ƒCƒ“ƒ^ƒ‰ƒNƒg‰Â”\ó‘Ô‚©”»’è
+        public bool InteractionPossible(Game.Data.EventData data)             // ã‚¤ãƒ³ã‚¿ãƒ©ã‚¯ãƒˆå¯èƒ½çŠ¶æ…‹ã‹åˆ¤å®š
         {
-            // TODO: ƒvƒŒƒCƒ„[‚ª‘ÎÛƒGƒŠƒA‚É‚¢‚é{ŠJn‰Â”\UIó‘Ô “™
+            // TODO: ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒå¯¾è±¡ã‚¨ãƒªã‚¢ã«ã„ã‚‹ï¼‹é–‹å§‹å¯èƒ½UIçŠ¶æ…‹ ç­‰
             return true;
         }
 
-        public bool StartInputReceived()                            // ƒCƒxƒ“ƒgŠJn‚Ì“ü—Í‚ª‚ ‚Á‚½‚©”»’è
+        public bool StartInputReceived()                            // ã‚¤ãƒ™ãƒ³ãƒˆé–‹å§‹ã®å…¥åŠ›ãŒã‚ã£ãŸã‹åˆ¤å®š
         {
-            // ToDo : Input System‚ÌInteract Action‚ğQÆ
+            // ToDo : Input Systemã®Interact Actionã‚’å‚ç…§
             return InputProxy != null && InputProxy.StartPressedThisFrame();
         }
 
@@ -193,7 +193,7 @@ namespace Game.Runtime
             public string depsStates; // "E1:Completed,E2:..."
         }
 
-        // Locked ¨ Scheduled ‚ÌğŒ‚»‚ê‚¼‚ê‚ª¡ true ‚©Šm”F
+        // Locked â†’ Scheduled ã®æ¡ä»¶ãã‚Œãã‚ŒãŒä»Š true ã‹ç¢ºèª
         public WhyLockedInfo ExplainWhyLockedForTest(string id)
         {
             var info = new WhyLockedInfo { id = id, now = Clock != null ? Clock.NowGameSeconds : 0f };
@@ -228,7 +228,7 @@ namespace Game.Runtime
             return info;
         }
 
-        // ƒeƒXƒg—pFŒ»İó‘Ô‚ğJSON•¶š—ñ‚Å‘‚«o‚µ
+        // ãƒ†ã‚¹ãƒˆç”¨ï¼šç¾åœ¨çŠ¶æ…‹ã‚’JSONæ–‡å­—åˆ—ã§æ›¸ãå‡ºã—
         public string ExportStateForTest()
         {
             var dto = new SnapshotDto();
@@ -248,13 +248,13 @@ namespace Game.Runtime
             return JsonUtility.ToJson(dto);
         }
 
-        // ƒeƒXƒg—pFJSON•¶š—ñ‚©‚çó‘Ô‚ğ•œŒ³
+        // ãƒ†ã‚¹ãƒˆç”¨ï¼šJSONæ–‡å­—åˆ—ã‹ã‚‰çŠ¶æ…‹ã‚’å¾©å…ƒ
         public void ImportStateForTest(string json)
         {
             var dto = JsonUtility.FromJson<SnapshotDto>(json);
             if (dto == null) return;
 
-            // ‚ğ•œŒ³iSimpleClock ‚ª’“ü‚³‚ê‚Ä‚¢‚é‘O’ñj
+            // æ™‚åˆ»ã‚’å¾©å…ƒï¼ˆSimpleClock ãŒæ³¨å…¥ã•ã‚Œã¦ã„ã‚‹å‰æï¼‰
             if (Clock is SimpleClock sc)
             {
                 sc.Jump(dto.now);
@@ -273,97 +273,3 @@ namespace Game.Runtime
 
     }
 }
-
-//using System.Collections.Generic;
-//using UnityEngine;
-//using Game.Data;
-
-//namespace Game.Runtime
-//{
-//    public sealed class EventManager : MonoBehaviour, IEvalContext
-//    {
-//        [SerializeField] private Game.Config.GlobalSettings globalSettings;
-//        [SerializeField] private List<Game.Data.EventData> eventSources = new();
-
-//        private readonly Dictionary<string, EventRuntime> _events = new();
-//        private readonly List<EventRuntime> _activeWatch = new();               // “¯ŠÄ‹ãŒÀŠÇ—
-
-//        // ƒ‰ƒCƒtƒTƒCƒNƒ‹
-//        private void Awake()
-//        {
-//            foreach (var e in eventSources)
-//            {
-//                if (string.IsNullOrEmpty(e.eventId)) continue;
-//                var rt = new EventRuntime(e);
-//                _events[e.eventId] = rt;
-//                // •K—v‚È‚ç‹N“®‚É Locked¨Scheduled ”»’è‚ğˆê“xÀ{
-//            }
-//        }
-
-//        private void Update()
-//        {
-//            // —DæƒLƒ…[‚â‹ß–TEŠÔƒtƒBƒ‹ƒ^‚ÍÀ‘•æ‚Å
-//            foreach (var rt in _events.Values)
-//            {
-//                rt.Evaluate(this);
-//            }
-//        }
-
-//        // IEvalContextÀ‘•iƒvƒƒWƒFƒNƒg‚É‡‚í‚¹‚Ä‹ï‘Ì‰»j
-//        public bool IsGloballyPaused => false;                  // ƒ|[ƒY‚âƒ[ƒh’†‚Ì”»’è
-//        public bool PolicyTreatStartOverAsExpired => false;     // ŠúŒÀØ‚ê”»’è@Šù’èFFailed‚Æ‚µ‚Äˆµ‚¤
-
-//        public bool DependenciesSatisfied(List<string> ids)     // ˆË‘¶æƒCƒxƒ“ƒg‚ª’B¬‚³‚ê‚Ä‚¢‚é‚©”»’è
-//        {
-//            if (ids == null || ids.Count == 0) return false;
-//            foreach (var id in ids)
-//            {
-//                if (!_events.TryGetValue(id, out var dep)) return false;
-//                if (dep.State != Game.Events.EventState.Completed) return false;
-//            }
-//            return true;
-//        }
-
-//        public bool NowReached(string gameDateTime)             // ŠÔ“’B‚Ì”»’è
-//        {
-//            // ToDo: ƒQ[ƒ€“à“ú‚Ì”äŠri“à•”ƒJƒŒƒ“ƒ_[‚Æ“¯Šúj
-//            return true;
-//        }
-
-//        public bool StartDeadlineExceeded(string gameDateTime)  // ŠJnŠúŒÀ’´‰ß”»’è
-//        {
-//            // ToDo
-//            return true;
-//        }
-//        public bool EndDeadlineReached(string gameDateTime)     // I—¹ŠúŒÀ’´‰ß”»’è
-//        {
-//            // TODO
-//            return false;
-//        }
-
-//        public bool CalendarAllowed(Game.Events.WeekdayRule rule)   // ƒJƒŒƒ“ƒ_[‹–‰Â
-//        {
-//            // ToDo : globalSettings.useWeekdaySystem ‚ÅØ‘Ö
-//            return true;
-//        }
-
-//        public bool LocationSatisfied(Game.Events.LocationRef loc)  // ”­¶êŠ‚É‚¢‚é‚©‚Ì”»’è
-//        {
-//            // ToDo : ILocationResolver ‚Å‰ğŒˆ^–¢ƒ[ƒh‚È‚ç•Û—¯
-//            return true;
-//        }
-//        public bool InteractionPossible(Game.Data.EventData data)             // ƒCƒ“ƒ^ƒ‰ƒNƒg‰Â”\ó‘Ô‚©”»’è
-//        {
-//            // TODO: ƒvƒŒƒCƒ„[‚ª‘ÎÛƒGƒŠƒA‚É‚¢‚é{ŠJn‰Â”\UIó‘Ô “™
-//            return true;
-//        }
-
-//        public bool StartInputReceived()                            // ƒCƒxƒ“ƒgŠJn‚Ì“ü—Í‚ª‚ ‚Á‚½‚©”»’è
-//        {
-//            // ToDo : Input System‚ÌInteract Action‚ğQÆ
-//            return UnityEngine.InputSystem.Keyboard.current != null &&
-//                   UnityEngine.InputSystem.Keyboard.current.eKey.wasPressedThisFrame;
-//        }
-
-//    }
-//}

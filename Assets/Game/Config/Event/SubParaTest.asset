@@ -16,7 +16,7 @@ MonoBehaviour:
   type: 1
   appearAt: 00:00
   startDeadline: 00:30
-  endDeadline: 01:10
+  endDeadline: 00:45
   location:
     kind: 0
     id: TestArea
