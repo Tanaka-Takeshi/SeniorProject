@@ -13,6 +13,7 @@ namespace Game.Tests.PlayMode
     /// - Start は「場所到達」または「インタラクト」
     /// - 期限の取り扱い（StartDL は now > DL / EndDL は now >= DL）
     /// - SignalCatcher は時間を進める前に Hook する
+    /// - インタラクト開始は指定エリア内が条件（interactNeedsLocation=true が既定）
     /// </summary>
     public class Smoke_PlayMode : PlayModeTestBase
     {
@@ -36,6 +37,7 @@ namespace Game.Tests.PlayMode
             e.altCompleteThreshold = alt;
             e.weekdayRule = new WeekdayRule();
             e.dependencies = new System.Collections.Generic.List<string>();
+            // interactNeedsLocation は既定(true)をそのまま利用
             return e;
         }
 
@@ -52,7 +54,8 @@ namespace Game.Tests.PlayMode
             TestHelpers.AdvanceTo(em, clockGO, "08:00");
             Assert.AreEqual("SM1", sig.Available);
 
-            // インタラクトで Start
+            // ★ インタラクト開始は指定エリア内が条件
+            locator.SetArea("Square");
             input.PressOnce();
             TestHelpers.Tick(em, 1);
             Assert.AreEqual("SM1", sig.Started);

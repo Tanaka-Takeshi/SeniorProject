@@ -1,3 +1,4 @@
+// Assets/Tests/PlayMode/QuestManager_IntegrationTests.cs
 using NUnit.Framework;
 using UnityEngine;
 using Game.Data;
@@ -53,6 +54,9 @@ public class QuestManager_IntegrationTests
 
         var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
         settings.dayLengthSeconds = 1440f;
+        // ★ 重要：インタラクトは指定エリア内のみ有効
+        //settings.interactNeedsLocation = true;
+
         TestHelpers.Inject(em, clock, locator, input, settings);
     }
 
@@ -102,8 +106,8 @@ public class QuestManager_IntegrationTests
         using var sig = new Game.Tests.TestHelpers.SignalCatcher(); // 進行前に購読
 
         // E1: 00:30 完了 / E2: 00:35 までに開始 → 00:50 で完了
-        // - E1 はインタラクト開始（autoStartOnLocation=false でもOKだが true のままでも挙動に影響なし）
-        // - E2 は「場所到達で開始」させたいので autoStartOnLocation=true にしておく
+        // - E1 はインタラクト開始（autoStartOnLocation=false）
+        // - E2 は「場所到達で開始」させたいので autoStartOnLocation=true
         var e1 = MakeEvent("E1", "00:00", "00:10", "00:30", "Town",
                            alt: 0.5f, requiresBtn: true, type: Game.Events.EventType.Main,
                            autoStartOnLocation: false);
@@ -119,7 +123,8 @@ public class QuestManager_IntegrationTests
         TestHelpers.AdvanceTo(em, clockGO, "00:00");
         Assert.AreEqual(Game.Events.EventState.Available, TestHelpers.GetRuntime(em, "E1").State);
 
-        // インタラクトで開始
+        // ★ インタラクトは対象エリア内でのみ有効
+        locator.SetArea("Town");
         input.PressOnce();
         TestHelpers.Tick(em, 1);  // Available → InProgress
         Game.Tests.TestHelpers.AssertState(em, "E1", Game.Events.EventState.InProgress);
@@ -135,7 +140,6 @@ public class QuestManager_IntegrationTests
 
         // --- E2 を開始・完了 ---
         // 現在 00:30。開始期限 00:35 以内に開始する
-        // 新仕様：E2 も時間で Available（既に達している想定）
         Assert.AreEqual(Game.Events.EventState.Available, TestHelpers.GetRuntime(em, "E2").State);
 
         // 「場所到達で自動開始」
@@ -169,10 +173,11 @@ public class QuestManager_IntegrationTests
         TestHelpers.AdvanceTo(em, clockGO, "00:00");
         Assert.AreEqual("E-only", tracker.CurrentStepId);
 
-        // Started でも前進しない
+        // ★ 指定エリアに入ってからインタラクト
+        locator.SetArea("Square");
         input.PressOnce();
-        TestHelpers.Tick(em, 1);
-        Assert.AreEqual("E-only", tracker.CurrentStepId);
+        TestHelpers.Tick(em, 1); // Start
+        Assert.AreEqual("E-only", tracker.CurrentStepId, "Started では前進しない");
 
         // Completed のみで前進
         TestHelpers.GetRuntime(em, "E-only").SetProgress(1f);
@@ -192,8 +197,9 @@ public class QuestManager_IntegrationTests
 
         tracker.LoadQuest("Sub.FailQ", new[] { "E-fail" });
 
-        // 時間で Available → インタラクトで Start
+        // 時間で Available → 指定エリア内でインタラクトで Start
         TestHelpers.AdvanceTo(em, clockGO, "00:00");
+        locator.SetArea("Cave");   // ★ エリアに入る
         input.PressOnce();
         TestHelpers.Tick(em, 1); // Start
 

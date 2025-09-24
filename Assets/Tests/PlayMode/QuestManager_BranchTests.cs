@@ -72,13 +72,16 @@ public class QuestManager_BranchTests : PlayModeTestBase
         // クエスト定義: OR条件
         tracker.LoadQuest("Quest.Branch", new[] { "E1", "E2|E3" });
 
-        // --- E1 完了（新仕様：時間で Available → インタラクトで Start）---
-        TestHelpers.AdvanceTo(em, clockGO, "00:00");                 // 時間で Available
+        // --- E1 完了（新仕様：時間で Available → 指定エリア内でインタラクトで Start）---
+        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:00"); // 時間で Available
+
+        locator.SetArea("Town");             // ★ 重要：インタラクト前に対象エリアへ
         input.PressOnce();
-        TestHelpers.Tick(em, 1);                                     // Available → InProgress
+        Game.Tests.TestHelpers.Tick(em, 1);  // Available → InProgress
+
         GetRuntime(em, "E1").SetProgress(1f);
-        TestHelpers.AdvanceTo(em, clockGO, "00:20");                 // End 到達（>=）
-        TestHelpers.Tick(em, 1);                                     // 確定
+        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:20"); // End 到達（>=）
+        Game.Tests.TestHelpers.Tick(em, 1);                     // 確定
         Game.Tests.TestHelpers.AssertState(em, "E1", EventState.Completed);
         Assert.Contains("E1", tracker.CompletedSteps, "E1完了で1ステップ進む");
         Assert.AreEqual("E2|E3", tracker.CurrentStepId, "次のステップは E2|E3");
@@ -86,10 +89,10 @@ public class QuestManager_BranchTests : PlayModeTestBase
         // --- OR条件：今回は E2 を選んで進める ---
         // すでに時間は十分経っているので E2/E3 は Available。E2の場所へ到達させて自動開始。
         locator.SetArea("Forest");
-        TestHelpers.Tick(em, 1);                                     // E2: Available → InProgress
+        Game.Tests.TestHelpers.Tick(em, 1);  // E2: Available → InProgress
         GetRuntime(em, "E2").SetProgress(1f);
-        TestHelpers.AdvanceTo(em, clockGO, "00:50");                 // E2 の終了刻
-        TestHelpers.Tick(em, 1);                                     // 確定
+        Game.Tests.TestHelpers.AdvanceTo(em, clockGO, "00:50"); // E2 の終了刻
+        Game.Tests.TestHelpers.Tick(em, 1);                     // 確定
 
         // 最終確認：E1 + E2 でクエスト完了（E3 は未着手のままでOK）
         Assert.IsTrue(tracker.IsQuestCompleted, "E1 + (E2|E3) 達成でクエスト完了");

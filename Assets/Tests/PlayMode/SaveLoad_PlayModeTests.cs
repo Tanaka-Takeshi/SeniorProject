@@ -14,7 +14,6 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
     public void Setup2()
     {
         BaseSetup();
-        // （必要なら）トラッカーをぶら下げる
         tracker = new GameObject("QuestTracker").AddComponent<TestQuestTracker>();
         tracker.transform.SetParent(root.transform, false);
     }
@@ -22,32 +21,59 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
     [TearDown]
     public void Teardown2() => BaseTearDown();
 
+    // 便利ヘルパ（他のPlayMode系と同等の引数並び）
+    private static EventData MakeEvent(
+        string id, string appear, string startDL, string endDL, string areaId,
+        float alt = 0.5f, bool requiresBtn = true, Game.Events.EventType type = Game.Events.EventType.Sub,
+        bool autoStartOnLocation = false // セーブ系は明示的にインタラクト開始に寄せる
+    )
+    {
+        var e = ScriptableObject.CreateInstance<EventData>();
+        e.eventId = id;
+        e.type = type;
+        e.appearAt = appear;              // "HH:MM"
+        e.startDeadline = startDL;
+        e.endDeadline = endDL;
+        e.location = new LocationRef { kind = LocationKind.AreaId, id = areaId };
+        e.requiresButtonPress = requiresBtn;
+        e.autoStartOnLocation = autoStartOnLocation;
+        e.dependencies = new System.Collections.Generic.List<string>();
+        e.altCompleteThreshold = alt;
+        e.weekdayRule = new WeekdayRule();
+        return e;
+    }
+
     // ========== ケース1：InProgress の途中で保存 → 復元して Completed まで進む ==========
     [Test]
     public void SaveLoad_ResumeMidProgress_ToCompleted()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
-        return;
+    Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
+    return;
 #endif
         using var sig = new TestHelpers.SignalCatcher();
 
-        // 00:10 で開始、閾値 0.6、終了 00:30
+        // 00:10 開始、閾値 0.6、終了 00:30
         var ev = MakeEvent("E.Resume", "00:00", "00:10", "00:30", "Plaza", 0.6f, true, Game.Events.EventType.Sub);
         InitEvents(ev);
 
-        // 新仕様：時間で Available。開始は「場所到達 or インタラクト」。
-        // ここではインタラクトで開始させる。
-        TestHelpers.AdvanceTo(em, clockGO, "00:10");  // appearAt 到達
+        // 時間で Available へ
+        TestHelpers.AdvanceTo(em, clockGO, "00:10");
+
+        // ★ 開始前に対象エリアへ移動（Interact要件を満たす）
+        locator.SetArea("Plaza");
+        TestHelpers.Tick(em, 1);          // 位置反映
+
+        // インタラクトで開始
         input.PressOnce();
-        TestHelpers.Tick(em, 1);                      // Available→InProgress
-        Assert.AreEqual(EventState.InProgress, TestHelpers.GetRuntime(em, "E.Resume").State);
+        TestHelpers.Tick(em, 1);          // Available → InProgress
+        TestHelpers.AssertState(em, "E.Resume", EventState.InProgress);
 
         // 進捗を閾値以上にして保存
         TestHelpers.GetRuntime(em, "E.Resume").SetProgress(0.6f);
         var snapshot = em.ExportStateForTest();
 
-        // 疑似ロード：新しい EventManager/Clock/Locator/Input を用意して Import
+        // 疑似ロード
         var newEMGO = new GameObject("EventManager2");
         var newEM = newEMGO.AddComponent<EventManager>();
         var newClockGO = new GameObject("Clock2");
@@ -59,36 +85,37 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
 
         var settings = ScriptableObject.CreateInstance<Game.Config.GlobalSettings>();
         settings.dayLengthSeconds = 1440f;
-        TestHelpers.Inject(newEM, newClock, newLoc, newInput, settings);  // 依存注入（DI）:contentReference[oaicite:2]{index=2}
+        TestHelpers.Inject(newEM, newClock, newLoc, newInput, settings);
 
-        // 定義（同一ID）をセットしてスナップショット適用
         newEM.InitializeForTest(new[] { ev });
         newEM.ImportStateForTest(snapshot);
 
-        // 終了刻へ進めて確定
+        // 終了刻へ進めて Completed になることを確認
         TestHelpers.AdvanceTo(newEM, newClockGO, "00:30");
         TestHelpers.Tick(newEM, 1);
 
-        Assert.AreEqual("E.Resume", sig.Completed, "復元後も正常に Completed へ到達するはず");
+        Assert.AreEqual("E.Resume", sig.Completed, "復元後も Completed へ到達するはず");
     }
+
 
     // ========== ケース2：Available で保存 → 復元して開始（MissedStart にならない） ==========
     [Test]
     public void SaveLoad_ResumeFromAvailable_StartsNormally()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
-        return;
+    Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
+    return;
 #endif
-        // appearAt=00:00, startDL=00:20, end=00:40
-        var ev = MakeEvent("E.Available", "00:00", "00:20", "00:40", "Hill", 0.5f, true, Game.Events.EventType.Sub);
+        var ev = MakeEvent("E.Available", "00:00", "00:20", "00:40", "Hill",
+                           0.5f, true, Game.Events.EventType.Sub, autoStartOnLocation: false);
         InitEvents(ev);
 
-        // 時間で Available（場所は不問）
         using var sig = new TestHelpers.SignalCatcher();
+
+        // 時間で Available（場所は不問）
         TestHelpers.AdvanceTo(em, clockGO, "00:00");
         Assert.AreEqual("E.Available", sig.Available);
-        Assert.AreEqual(EventState.Available, TestHelpers.GetRuntime(em, "E.Available").State);
+        TestHelpers.AssertState(em, "E.Available", EventState.Available);
 
         // スナップショット保存
         var snapshot = em.ExportStateForTest();
@@ -109,19 +136,23 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
         newEM.InitializeForTest(new[] { ev });
         newEM.ImportStateForTest(snapshot);
 
-        // 復元直後に開始トリガ（インタラクト）→ Start になること（MissedStart しない）
+        // ★ 現仕様：インタラクト開始にはロケーション一致が必要
+        newLoc.SetArea("Hill");
+        TestHelpers.Tick(newEM, 1);   // 位置更新を反映
+
+        // 復元直後にインタラクト → InProgress
         newInput.PressOnce();
         TestHelpers.Tick(newEM, 1);
         TestHelpers.AssertState(newEM, "E.Available", EventState.InProgress);
     }
 
-    // ========== ケース3：Failed 直前で保存 → 復元しても同じ失敗（MissedEndLowProgress）になる ==========
+    // ========== ケース3：Failed 直前で保存 → 復元しても同じ失敗（MissedEndLowProgress） ==========
     [Test]
     public void SaveLoad_ResumeJustBeforeFail_StillFails()
     {
 #if !UNITY_EDITOR
-        Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
-        return;
+    Assert.Inconclusive("このテストは UNITY_EDITOR 専用APIを使用します。");
+    return;
 #endif
         using var sig = new TestHelpers.SignalCatcher();
 
@@ -129,10 +160,15 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
         var ev = MakeEvent("E.Fail", "00:00", "00:05", "00:15", "Dock", 0.7f, true, Game.Events.EventType.Sub);
         InitEvents(ev);
 
-        // 時間で Available → インタラクトで開始 → 進捗低いまま
+        // 時間で Available → ★ 対象エリアに移動してからインタラクト開始
         TestHelpers.AdvanceTo(em, clockGO, "00:05");
+        locator.SetArea("Dock");          // ← 重要：ロケーション一致
+        TestHelpers.Tick(em, 1);          // 位置反映
         input.PressOnce();
-        TestHelpers.Tick(em, 1); // Start
+        TestHelpers.Tick(em, 1);          // Available → InProgress
+        TestHelpers.AssertState(em, "E.Fail", EventState.InProgress);
+
+        // 進捗低いまま
         TestHelpers.GetRuntime(em, "E.Fail").SetProgress(0.2f);
 
         // 失敗直前（00:14）で保存
@@ -155,7 +191,7 @@ public class SaveLoad_PlayModeTests : PlayModeTestBase
         newEM.InitializeForTest(new[] { ev });
         newEM.ImportStateForTest(snapshot);
 
-        // 終了刻へ進める → Failed(MissedEndLowProgress) に到達する
+        // 終了刻へ進める → MissedEndLowProgress で失敗
         TestHelpers.AdvanceTo(newEM, newClockGO, "00:15");
         TestHelpers.Tick(newEM, 1);
 

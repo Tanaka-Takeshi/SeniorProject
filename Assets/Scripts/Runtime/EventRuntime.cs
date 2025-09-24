@@ -83,7 +83,25 @@ namespace Game.Runtime
 
                 case EventState.Available:
                     {
-                        // ① まず開始期限超過をチェック（最優先）
+                        // ① 指定エリア到達で自動開始
+                        if (Data.autoStartOnLocation && ctx.LocationSatisfied(Data.location))
+                        {
+                            State = EventState.InProgress;
+                            EventSignals.RaiseStarted(Data.eventId);
+                            break;
+                        }
+
+                        // ② インタラクト開始（エリア必須かどうかをイベントごとに切替）
+                        bool pressed = Data.requiresButtonPress && ctx.TryConsumeStartInput();
+                        bool locOK = !Data.interactNeedsLocation || ctx.LocationSatisfied(Data.location);
+                        if (pressed && locOK)
+                        {
+                            State = EventState.InProgress;
+                            EventSignals.RaiseStarted(Data.eventId);
+                            break;
+                        }
+
+                        // ③ 開始せず開始期限超過
                         if (ctx.StartDeadlineExceeded(Data.startDeadline))
                         {
                             if (ctx.PolicyTreatStartOverAsExpired)
@@ -97,30 +115,7 @@ namespace Game.Runtime
                                 FailedReason = FailedReason.MissedStart;
                                 EventSignals.RaiseFailed(Data.eventId, FailedReason);
                             }
-                            break;
                         }
-
-                        // ② 「その場に居たまま」だとブロック継続。離れたら許可に戻す
-                        if (!_allowAutoStartByLocation && !ctx.LocationSatisfied(Data.location))
-                            _allowAutoStartByLocation = true;
-
-                        // ③ 開始条件：到達 or 入力
-                        bool byLocation = Data.autoStartOnLocation
-                                          && _allowAutoStartByLocation
-                                          && ctx.LocationSatisfied(Data.location);
-
-                        // 入力開始は requiresButtonPress が true のときのみ
-                        bool byInteract = Data.requiresButtonPress
-                                          && ctx.TryConsumeStartInput();
-
-                        if (byLocation || byInteract)
-                        {
-                            State = EventState.InProgress;
-                            EventSignals.RaiseStarted(Data.eventId);
-                            break; // このフレームは開始で終える
-                        }
-
-                        // 何もなければ Available 継続
                         break;
                     }
 

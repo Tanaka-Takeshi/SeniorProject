@@ -70,7 +70,7 @@ namespace Game.Tests.EditMode
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Scheduled, rt.State);
 
-            // ★旧仕様では場所OK等が必要だったが、新仕様では時間のみで Available
+            // 新仕様：時間だけで Available
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Available, rt.State);
         }
@@ -108,7 +108,7 @@ namespace Game.Tests.EditMode
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Available, rt.State);
 
-            // (B) インタラクトで開始
+            // (B) インタラクトで開始（この Evaluate のみ true）
             ctx.inputEdge = true;
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.InProgress, rt.State);
@@ -137,10 +137,16 @@ namespace Game.Tests.EditMode
         {
             var ctx = new Ctx { depsOK = true, nowOK = true, calendarOK = true };
             var rt = new EventRuntime(MakeData());
-            // -> InProgress まで進める
-            rt.Evaluate(ctx); rt.Evaluate(ctx);
-            ctx.inputEdge = true; rt.Evaluate(ctx);
-            Assert.AreEqual(EventState.InProgress, rt.State);
+
+            // -> Available まで
+            rt.Evaluate(ctx); // Locked -> Scheduled
+            rt.Evaluate(ctx); // Scheduled -> Available
+            Assert.AreEqual(EventState.Available, rt.State);
+
+            // ←← ここを“場所到達で開始”に変更（確実に InProgress に入れる）
+            ctx.locationOK = true;
+            rt.Evaluate(ctx); // Available -> InProgress
+            Assert.AreEqual(EventState.InProgress, rt.State, "場所到達で InProgress になるはず");
 
             // (a) 閾値以上で Completed
             rt.SetProgress(0.6f);
@@ -148,12 +154,25 @@ namespace Game.Tests.EditMode
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Completed, rt.State);
 
-            // リセットして (b) 閾値未満で Failed
+#if UNITY_EDITOR
+            // (b) 閾値未満で Failed（状態を InProgress に戻して確認）
+            ctx.endDeadlineReached = false;
             rt.RestoreForTest(EventState.InProgress, FailedReason.None, 0.4f);
             ctx.endDeadlineReached = true;
             rt.Evaluate(ctx);
             Assert.AreEqual(EventState.Failed, rt.State);
             Assert.AreEqual(FailedReason.MissedEndLowProgress, rt.FailedReason);
+#else
+            // エディタ以外で RestoreForTest 不可な場合の代替：
+            var rtType = typeof(EventRuntime);
+            var stateProp = rtType.GetProperty("State");
+            stateProp?.SetValue(rt, EventState.InProgress, null);
+            rt.SetProgress(0.4f);
+            ctx.endDeadlineReached = true;
+            rt.Evaluate(ctx);
+            Assert.AreEqual(EventState.Failed, rt.State);
+            Assert.AreEqual(FailedReason.MissedEndLowProgress, rt.FailedReason);
+#endif
         }
     }
 }

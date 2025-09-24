@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 21351e31f8b969f4baf170eb173778b1, type: 3}
-  m_Name: MainParaTest
+  m_Name: SubParaTest
   m_EditorClassIdentifier: 
-  eventId: Main.Parallel
-  type: 0
+  eventId: Sub.Parallel
+  type: 1
   appearAt: 00:00
-  startDeadline: 00:20
-  endDeadline: 01:00
+  startDeadline: 00:30
+  endDeadline: 00:45
   location:
     kind: 0
-    id: TestArea
+    id: Forest
     worldPos: {x: 0, y: 0, z: 0}
   requiresButtonPress: 1
   autoStartOnLocation: 0

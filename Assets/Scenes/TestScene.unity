@@ -707,6 +707,7 @@ MonoBehaviour:
   mainHasPriority: 1
   emptyGraceFrames: 1
   debugLogSelection: 0
+  autoRebindManager: 1
 --- !u!1 &539057552
 GameObject:
   m_ObjectHideFlags: 0
@@ -812,7 +813,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &833171112
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1041,6 +1042,110 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1044308147}
   m_CullTransparentMesh: 1
+--- !u!1 &1060461094
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1060461096}
+  - component: {fileID: 1060461095}
+  m_Layer: 0
+  m_Name: ScenarioDrivar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1060461095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1060461094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167facbb62602e14e9d302aeb229e0d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  em: {fileID: 1550585505}
+  clock: {fileID: 1973750672}
+  locator: {fileID: 1570442076}
+  tracker: {fileID: 527461262}
+  keyTown: 49
+  keyForest: 50
+  keyInteract: 101
+  keyPlus5Min: 116
+  keyJumpMinute: 121
+  keyResetFailAll: 114
+  keyDump: 108
+--- !u!4 &1060461096
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1060461094}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 327.06546, y: 956.1835, z: 89.62818}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1068575656
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1068575658}
+  - component: {fileID: 1068575657}
+  m_Layer: 0
+  m_Name: ScenarioBootstrap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1068575657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068575656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bef39e51a6e6074cadb567441a402c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  eventManager: {fileID: 1550585505}
+  clockBehaviour: {fileID: 1973750672}
+  locatorBehaviour: {fileID: 1570442076}
+  inputBehaviour: {fileID: 59655582}
+  globalSettings: {fileID: 11400000, guid: b020f1dc25e0e6b419297addeb8b2a15, type: 2}
+--- !u!4 &1068575658
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068575656}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 327.06546, y: 956.1835, z: 89.62818}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1108614058
 GameObject:
   m_ObjectHideFlags: 0
@@ -1485,6 +1590,8 @@ MonoBehaviour:
   locationBehaviour: {fileID: 1570442076}
   inputBehaviour: {fileID: 59655582}
   testPause: 0
+  enableRuntimeTrace: 0
+  traceCapacity: 256
 --- !u!4 &1550585506
 Transform:
   m_ObjectHideFlags: 0
@@ -1976,10 +2083,10 @@ SceneRoots:
   m_Roots:
   - {fileID: 1765451173}
   - {fileID: 1108614061}
+  - {fileID: 1550585506}
   - {fileID: 1973750671}
   - {fileID: 1570442077}
   - {fileID: 59655583}
-  - {fileID: 1550585506}
   - {fileID: 833171113}
   - {fileID: 679323445}
   - {fileID: 947105998}
@@ -1990,3 +2097,5 @@ SceneRoots:
   - {fileID: 193449032}
   - {fileID: 1258002475}
   - {fileID: 539057554}
+  - {fileID: 1060461096}
+  - {fileID: 1068575658}

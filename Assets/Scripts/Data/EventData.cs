@@ -35,6 +35,8 @@ namespace Game.Data
         public WeekdayRule weekdayRule;
 
         [TextArea] public string notes;
+
+        public bool interactNeedsLocation = true;
     }
 
     [CreateAssetMenu(menuName = "Game/Data/QuestData")]

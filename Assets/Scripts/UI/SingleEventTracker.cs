@@ -92,6 +92,18 @@ public sealed class SingleEventTracker : MonoBehaviour
     // ==== ポーリングは LateUpdate で ====
     void LateUpdate()
     {
+        if (eventManager == null)
+        {
+            // 1フレームに1回だけリバインドを試行
+            if (Time.frameCount != _rebindTryFrame)
+            {
+                _rebindTryFrame = Time.frameCount;
+                TryRebindManager();
+            }
+            // ここでまだ null なら何もしない
+            return;
+        }
+
         // 1) 現在のランタイムと同期
         MergeFromManager();
 
@@ -117,10 +129,10 @@ public sealed class SingleEventTracker : MonoBehaviour
         }
         else
         {
-            // 候補ゼロ：連続カウントが閾値を超えたら Hide
+            // 候補ゼロ：連続カウントが閾値を超えたら、末尾でもう一度だけ確認してから Hide
             _consecutiveEmpty++;
             if (hideWhenNone && _consecutiveEmpty > emptyGraceFrames)
-                hud.HideFrom(this);
+                StartCoroutine(HideIfStillNoneEndOfFrame());
         }
     }
 
@@ -129,6 +141,18 @@ public sealed class SingleEventTracker : MonoBehaviour
         yield return new WaitForEndOfFrame();
         MergeFromManager();
         ForceReselectRender();
+    }
+
+    IEnumerator HideIfStillNoneEndOfFrame()
+    {
+        yield return new WaitForEndOfFrame();
+
+        MergeFromManager();
+        var bestAgain = ComputeBestId();
+        if (string.IsNullOrEmpty(bestAgain))
+            hud.HideFrom(this);     // ← ここは Owner 保護版を使う
+        else
+            ForceReselectRender();  // 復活
     }
 
     // ===== Signals =====
@@ -163,25 +187,15 @@ public sealed class SingleEventTracker : MonoBehaviour
         {
             _currentId = null;
 
-            MergeFromManager();
+            // まず現在の一言を出す（隠さない）
+            hud.AcquireOwner(this);
+            hud.SetBodyFrom(this, finalText);
+            hud.SetVisible(true);
 
-            var bestId = ComputeBestId();
-            if (string.IsNullOrEmpty(bestId))
-            {
-                hud.AcquireOwner(this);
-                hud.SetBodyFrom(this, finalText);
-                StartCoroutine(ReselectEndOfFrame());
-            }
-            else
-            {
-                _currentId = bestId;
-                hud.AcquireOwner(this);
-                hud.SetTitleFrom(this, BuildTitle(bestId));
-                hud.SetBodyFrom(this, BuildBody(bestId));
-                hud.SetVisible(true);
-                StartCoroutine(ReselectEndOfFrame());
-            }
+            // 末尾で最新に切り替え（なければ HideIfStillNone）
+            StartCoroutine(ReselectEndOfFrame());
         }
+        // 表示中でないIDの終了は LateUpdate で同期される
     }
 
     // ===== Core =====
@@ -189,6 +203,10 @@ public sealed class SingleEventTracker : MonoBehaviour
     {
         if (_active.TryGetValue(id, out var e))
         {
+            // 状態が後退する場合（例：Startedの後に遅延Availableが来た）を無視
+            if (e.state == EventState.InProgress && s.state == EventState.Available)
+                return;
+
             e.state = s.state;
             e.type = s.type;
             if (s.state == EventState.Available || s.state == EventState.InProgress)
@@ -201,7 +219,8 @@ public sealed class SingleEventTracker : MonoBehaviour
                 id = id,
                 type = s.type,
                 state = s.state,
-                serial = ++_serialCounter
+                serial = (s.state == EventState.Available || s.state == EventState.InProgress)
+                         ? ++_serialCounter : _serialCounter
             };
         }
     }
@@ -313,7 +332,19 @@ public sealed class SingleEventTracker : MonoBehaviour
         if (eventManager && eventManager.TryGetRuntime(id, out var rt) && rt != null)
         {
             var d = rt.Data;
-            var place = string.IsNullOrEmpty(d.location.id) ? "目的地" : d.location.id;
+
+            // 表示用に "A|B|C" → "A / B / C"
+            string PlaceLabel(string raw)
+            {
+                if (string.IsNullOrEmpty(raw)) return "目的地";
+                if (!raw.Contains("|")) return raw;
+                var parts = raw.Split('|');
+                for (int i = 0; i < parts.Length; i++) parts[i] = parts[i].Trim();
+                return string.Join(" / ", parts);
+            }
+
+            var place = PlaceLabel(d.location.id);
+
             if (rt.State == EventState.InProgress) return $"進行中：{place}";
             if (d.autoStartOnLocation) return $"{place} に到達すると自動で開始";
             if (d.requiresButtonPress) return $"{place} で [E] で開始";
@@ -333,25 +364,56 @@ public sealed class SingleEventTracker : MonoBehaviour
     void MergeFromManager()
     {
         if (!eventManager) return;
-
-        var seen = new HashSet<string>();
-        foreach (var rt in eventManager.AllRuntimes())
+        try
         {
-            if (rt == null) continue;
-            var id = rt.Data.eventId;
-            seen.Add(id);
+            var seen = new HashSet<string>();
+            foreach (var rt in eventManager.AllRuntimes())
+            {
+                if (rt == null || rt.Data == null) continue;
+                var id = rt.Data.eventId;
+                if (string.IsNullOrEmpty(id)) continue;
+                seen.Add(id);
 
-            if (rt.State == EventState.InProgress || (showAvailable && rt.State == EventState.Available))
-                AddOrUpdate(id, (rt.Data.type, rt.State));
-            else
-                _active.Remove(id);
+                if (rt.State == EventState.InProgress || (showAvailable && rt.State == EventState.Available))
+                    AddOrUpdate(id, (rt.Data.type, rt.State));
+                else
+                    _active.Remove(id);
+            }
+
+            // ソースから消えたIDも掃除
+            using (var it = _active.Keys.GetEnumerator())
+            {
+                var toRemove = new List<string>();
+                foreach (var kv in _active) if (!seen.Contains(kv.Key)) toRemove.Add(kv.Key);
+                foreach (var rid in toRemove) _active.Remove(rid);
+            }
         }
+        catch (System.Exception ex)
+        {
+            if (debugLogSelection) Debug.LogWarning($"[Tracker] MergeFromManager error: {ex.Message}", this);
+        }
+    }
 
-        // ソースから消えたIDも掃除
-        var toRemove = new List<string>();
-        foreach (var kv in _active)
-            if (!seen.Contains(kv.Key)) toRemove.Add(kv.Key);
-        foreach (var rid in toRemove) _active.Remove(rid);
+    // ===== Rebind support =====
+    [SerializeField] private bool autoRebindManager = true;
+    private int _rebindTryFrame = -1;
+
+    private bool TryRebindManager()
+    {
+        if (!autoRebindManager) return false;
+#if UNITY_2023_1_OR_NEWER
+        var found = Object.FindFirstObjectByType<EventManager>();
+#else
+    var found = Object.FindObjectOfType<EventManager>();
+#endif
+        if (found != null && found != eventManager)
+        {
+            eventManager = found;
+            if (debugLogSelection) Debug.Log($"[Tracker] Rebound EventManager: {found.GetInstanceID()}");
+            RebuildFromManager();
+            return true;
+        }
+        return false;
     }
 
 #if UNITY_EDITOR
@@ -369,29 +431,21 @@ public sealed class SingleEventTracker : MonoBehaviour
 
     public void ForceRefreshForTest()
     {
-        // そのフレームの最終状態で候補収集→即描画まで実行
         MergeFromManager();
         ForceReselectRender();
     }
 
     public void DebugDumpFromManager()
     {
-        if (!eventManager)
-        {
-            Debug.Log("[TrackerDump] em=null");
-            return;
-        }
-
+        if (!eventManager) { Debug.Log("[TrackerDump] em=null"); return; }
         int total = 0;
         foreach (var rt in eventManager.AllRuntimes())
         {
-            if (rt == null) continue;
+            if (rt == null || rt.Data == null) continue;
             total++;
             Debug.Log($"[TrackerDump] id={rt.Data.eventId} state={rt.State} type={rt.Data.type}");
         }
         Debug.Log($"[TrackerDump] total={total} showAvailable={showAvailable}");
-
-        // いまトラッカーが保持している候補一覧も出す
         Debug.Log($"[TrackerDump] activeKeys=[{string.Join(",", _active.Keys)}]");
     }
 #endif

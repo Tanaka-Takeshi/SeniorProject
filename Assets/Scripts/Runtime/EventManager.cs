@@ -40,6 +40,11 @@ namespace Game.Runtime
                 _events[e.eventId] = rt;
                 // 必要なら起動時に Locked→Scheduled 判定を一度実施
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _bootTime = System.DateTime.UtcNow;
+            ValidateOnStart();
+#endif
         }
 
         private void Update()
@@ -148,9 +153,37 @@ namespace Game.Runtime
             return true;
         }
 
-        public bool LocationSatisfied(Game.Events.LocationRef loc)  // 発生場所にいるかの判定
+        public bool LocationSatisfied(Game.Events.LocationRef loc)
         {
-            return Locator == null || Locator.IsSatisfied(loc);
+            // ロケーション未指定は「どこでもOK」
+            if (loc.kind == Game.Events.LocationKind.AreaId && string.IsNullOrEmpty(loc.id))
+                return true;
+
+            // 既存の Locator が無いなら判定不能 → とりあえず OK（従来踏襲）
+            if (Locator == null) return true;
+
+            // "A|B|C" を OR として解釈
+            if (loc.kind == Game.Events.LocationKind.AreaId && loc.id != null && loc.id.Contains("|"))
+            {
+                var parts = loc.id.Split('|');
+                foreach (var pRaw in parts)
+                {
+                    var p = pRaw.Trim();
+                    if (string.IsNullOrEmpty(p)) continue;
+
+                    var sub = new Game.Events.LocationRef
+                    {
+                        kind = Game.Events.LocationKind.AreaId,
+                        id = p
+                    };
+                    if (Locator.IsSatisfied(sub))
+                        return true; // 1つでも満たせばOK
+                }
+                return false;
+            }
+
+            // 単一IDは従来通り
+            return Locator.IsSatisfied(loc);
         }
         public bool InteractionPossible(Game.Data.EventData data)             // インタラクト可能状態か判定
         {
@@ -268,7 +301,212 @@ namespace Game.Runtime
                 }
             }
         }
+
+        public void Inject(IClock clock, ILocationResolver locator, IInputProxy input,
+            Game.Config.GlobalSettings settings)
+        {
+            this.clockBehaviour = clock as MonoBehaviour;
+            this.locationBehaviour = locator as MonoBehaviour;
+            this.inputBehaviour = input as MonoBehaviour;
+            this.globalSettings = settings;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (clockBehaviour == null) Debug.LogWarning("[EventManager.Inject] clock が MonoBehaviour ではありません。");
+            if (locationBehaviour == null) Debug.LogWarning("[EventManager.Inject] locator が MonoBehaviour ではありません。");
+            if (inputBehaviour == null) Debug.LogWarning("[EventManager.Inject] input が MonoBehaviour ではありません。");
+            if (globalSettings == null) Debug.LogWarning("[EventManager.Inject] GlobalSettings が null です。");
 #endif
+        }
+#endif
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [Header("Debug / Trace")]
+        [SerializeField] private bool enableRuntimeTrace = false;
+        [SerializeField, Min(10)] private int traceCapacity = 256;
+
+        private readonly System.Collections.Generic.Queue<string> _trace = new();
+        private System.DateTime _bootTime;
+
+        // Editorから On/Off切り替え用
+        public void EnableRuntimeTrace(bool on) => enableRuntimeTrace = on;
+
+        // 1行追加（リングバッファ）
+        private void Trace(string msg)
+        {
+            if (!enableRuntimeTrace) return;
+            var since = (System.DateTime.UtcNow - _bootTime).TotalSeconds;
+            string line = $"[{since,6:0.00}s] {msg}";
+            _trace.Enqueue(line);
+            while (_trace.Count > traceCapacity) _trace.Dequeue();
+            // Consoleにも出したい時は ↓ をコメント外す
+            // Debug.Log(line, this);
+        }
+
+        public string[] GetRecentTrace() => _trace.ToArray();
+        private void ValidateOnStart()
+        {
+            var seen = new HashSet<string>();
+            foreach (var e in eventSources)
+            {
+                if (e == null)
+                {
+                    Debug.LogWarning("[EventData] Null entry");
+                    continue;
+                }
+
+                // 空IDチェック
+                if (string.IsNullOrEmpty(e.eventId))
+                {
+                    Debug.LogWarning("[EventData] Empty id", e);
+                    continue;
+                }
+
+                // 重複IDチェック
+                if (!seen.Add(e.eventId))
+                {
+                    Debug.LogWarning($"[EventData] DuplicateId: {e.eventId}", e);
+                }
+
+                // 時系列チェック
+                float ap = ParseGameSeconds(e.appearAt);
+                float sd = ParseGameSeconds(e.startDeadline);
+                float ed = ParseGameSeconds(e.endDeadline);
+                if (!(ap <= sd && sd <= ed))
+                {
+                    Debug.LogWarning($"[EventData] OrderViolation: {e.eventId} appear={e.appearAt} start={e.startDeadline} end={e.endDeadline}", e);
+                }
+
+                // altCompleteThreshold 範囲
+                if (e.altCompleteThreshold < 0f || e.altCompleteThreshold > 1f)
+                {
+                    Debug.LogWarning($"[EventData] AltThreshold out of range (0..1): {e.eventId}={e.altCompleteThreshold}", e);
+                }
+
+                // 開始不可な組合せ
+                if (!e.requiresButtonPress && !e.autoStartOnLocation)
+                {
+                    Debug.LogWarning($"[EventData] NoStartPath: {e.eventId}", e);
+                }
+
+                // 依存先存在確認
+                if (e.dependencies != null)
+                {
+                    foreach (var dep in e.dependencies)
+                    {
+                        if (!string.IsNullOrEmpty(dep) && !eventSources.Exists(x => x && x.eventId == dep))
+                        {
+                            Debug.LogWarning($"[EventData] MissingDependency: {e.eventId} -> {dep}", e);
+                        }
+                    }
+                }
+            }
+
+            // 循環依存チェック
+            DetectCycles(eventSources);
+        }
+
+        /// <summary>循環依存をDFSで検出</summary>
+        private void DetectCycles(List<Game.Data.EventData> sources)
+        {
+            var map = new Dictionary<string, List<string>>();
+            foreach (var e in sources)
+            {
+                if (e == null || string.IsNullOrEmpty(e.eventId)) continue;
+                map[e.eventId] = e.dependencies ?? new List<string>();
+            }
+
+            var visiting = new HashSet<string>();
+            var visited = new HashSet<string>();
+
+            foreach (var id in map.Keys)
+            {
+                if (HasCycle(id, map, visiting, visited))
+                {
+                    Debug.LogWarning($"[EventData] Cycle detected starting at: {id}");
+                }
+            }
+        }
+
+        private static bool HasCycle(string id, Dictionary<string, List<string>> map, HashSet<string> visiting, HashSet<string> visited)
+        {
+            if (visited.Contains(id)) return false;
+            if (!map.TryGetValue(id, out var deps) || deps.Count == 0)
+            {
+                visited.Add(id);
+                return false;
+            }
+
+            if (!visiting.Add(id)) return true; // 再訪問 → サイクル
+            foreach (var d in deps)
+            {
+                if (map.ContainsKey(d) && HasCycle(d, map, visiting, visited)) return true;
+            }
+            visiting.Remove(id);
+            visited.Add(id);
+            return false;
+        }
+
+        [System.Serializable]
+        private class EventStateRow
+        {
+            public string id;
+            public EventState state;
+            public FailedReason reason;
+            public string type;     // Main/Sub など
+            public float progress;  // 0..1
+        }
+
+        public string ExportSnapshotJson()
+        {
+            var list = new System.Collections.Generic.List<EventStateRow>();
+            foreach (var kv in _events)
+            {
+                var rt = kv.Value;
+                list.Add(new EventStateRow
+                {
+                    id = kv.Key,
+                    state = rt.State,
+                    reason = rt.FailedReason,
+                    type = rt.Data.type.ToString(),
+                    progress = rt.Progress
+                });
+            }
+            return JsonUtility.ToJson(new Wrapper<EventStateRow> { items = list.ToArray() }, true);
+        }
+
+        [System.Serializable]
+        private class Wrapper<T> { public T[] items; }
+
+        public string ExportSnapshotCsv()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("id,state,reason,type,progress");
+            foreach (var kv in _events)
+            {
+                var rt = kv.Value;
+                sb.Append(kv.Key).Append(',')
+                  .Append(rt.State).Append(',')
+                  .Append(rt.FailedReason).Append(',')
+                  .Append(rt.Data.type).Append(',')
+                  .Append(rt.Progress.ToString("0.00"))
+                  .AppendLine();
+            }
+            return sb.ToString();
+        }
+
+        // Console にドンと出す
+        public void DumpSnapshotToConsole()
+        {
+            Debug.Log("[EventManager] --- SNAPSHOT(JSON) ---\n" + ExportSnapshotJson(), this);
+            Debug.Log("[EventManager] --- TRACE(Latest) ---\n" + string.Join("\n", GetRecentTrace()), this);
+        }
+
+        [ContextMenu("Debug/Dump Snapshot To Console")]
+        private void CtxDump() => DumpSnapshotToConsole();
+
+        [ContextMenu("Debug/Toggle Runtime Trace")]
+        private void CtxToggleTrace() => enableRuntimeTrace = !enableRuntimeTrace;
+#endif
+
 
 
     }
