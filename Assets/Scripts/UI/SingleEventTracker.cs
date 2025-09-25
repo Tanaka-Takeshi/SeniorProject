@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Game.Events;
 using Game.Runtime;
 using Game.Data;
+using Game.Config;
 
 //
 // EventManager より“後”に走るよう明示
@@ -30,6 +31,10 @@ public sealed class SingleEventTracker : MonoBehaviour
 
     [Header("Debug")]
     public bool debugLogSelection = false;
+
+    [Header("Runtime Toggles (optional)")]
+    [SerializeField] private ScenarioRuntimeToggles runtimeToggles;
+
 
     private class Entry
     {
@@ -62,6 +67,21 @@ public sealed class SingleEventTracker : MonoBehaviour
 #else
         if (!eventManager) eventManager = Object.FindObjectByType<EventManager>();
 #endif
+        ApplyToggles();
+    }
+
+    void OnValidate() { ApplyToggles(); }
+
+    private void ApplyToggles()
+    {
+        if (runtimeToggles == null) return;
+        this.showAvailable = runtimeToggles.showAvailableInHUD;
+        this.emptyGraceFrames = Mathf.Max(0, runtimeToggles.emptyGraceFrames);
+
+        // “Available時Main優先”の反映：
+        // もし選定ロジックに bool フラグを持っていればここで代入。
+        // 例）this.preferMainOnAvailable = runtimeToggles.preferMainOnAvailable;
+        // フラグが無く、内部で固定判定しているなら、その分岐で runtimeToggles を参照。
     }
 
     void OnEnable()

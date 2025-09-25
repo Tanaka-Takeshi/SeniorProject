@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Data;
 using Game.Events;
+using Game.Config;
 
 namespace Game.Runtime
 {
@@ -28,6 +29,12 @@ namespace Game.Runtime
         public bool TryGetRuntime(string id, out EventRuntime rt) => _events.TryGetValue(id, out rt);
         public System.Collections.Generic.IEnumerable<EventRuntime> AllRuntimes() => _events.Values;
         public IClock ClockRef => Clock;
+
+        [Header("Runtime Toggles (optional)")]
+        [SerializeField] private ScenarioRuntimeToggles runtimeToggles;
+
+        // 外部からセットしたい場合用（Bootstrap等）
+        public void SetRuntimeToggles(ScenarioRuntimeToggles t) => runtimeToggles = t;
 
 
         // ライフサイクル
@@ -185,11 +192,17 @@ namespace Game.Runtime
             // 単一IDは従来通り
             return Locator.IsSatisfied(loc);
         }
-        public bool InteractionPossible(Game.Data.EventData data)             // インタラクト可能状態か判定
+        public bool InteractionPossible(Game.Data.EventData data)
         {
-            // TODO: プレイヤーが対象エリアにいる＋開始可能UI状態 等
+            // 位置必須モードなら、プレイヤーが対象ロケーションを満たしている時のみインタラクト有効
+            if (runtimeToggles != null && runtimeToggles.interactNeedsLocation)
+            {
+                if (!LocationSatisfied(data.location)) return false;
+            }
+            // ここで将来“UI状態/距離”等も足せる
             return true;
         }
+
 
         public bool StartInputReceived()                            // イベント開始の入力があったか判定
         {

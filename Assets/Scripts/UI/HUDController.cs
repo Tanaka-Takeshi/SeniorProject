@@ -22,6 +22,18 @@ public class HUDController : MonoBehaviour
     [Tooltip("ログを詳細表示（呼び出しスタックも）")]
     [SerializeField] private bool verboseLog = false;
 
+    [Header("Optional UI (Progress & Toast)")]
+    [SerializeField] Slider progressBar;                // 任意: 0..1
+    [SerializeField] CanvasGroup toastGroup;            // 任意: フェード用
+    [SerializeField] TMP_Text toastText;                // 任意: 文言
+
+    [SerializeField] float toastFadeIn = 0.12f;
+    [SerializeField] float toastShow = 1.6f;
+    [SerializeField] float toastFadeOut = 0.25f;
+
+    float toastTimer = 0f;
+    bool toastActive = false;
+
     private Coroutine _fadeCo;
 
     // ---- 所有権（オプション） ----
@@ -237,4 +249,57 @@ public class HUDController : MonoBehaviour
         if (panelRoot) panelRoot.SetActive(true);
     }
 #endif
+
+    /// <summary>進捗を表示。null で非表示。</summary>
+    public void SetProgress(float? value)
+    {
+        if (!progressBar) return;
+        if (value.HasValue)
+        {
+            if (!progressBar.gameObject.activeSelf) progressBar.gameObject.SetActive(true);
+            progressBar.normalizedValue = Mathf.Clamp01(value.Value);
+        }
+        else
+        {
+            if (progressBar.gameObject.activeSelf) progressBar.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>短いトーストを表示。</summary>
+    public void ShowToast(string message)
+    {
+        if (!toastText || !toastGroup) return;
+        toastText.text = message ?? "";
+        toastTimer = 0f;
+        toastActive = true;
+        toastGroup.alpha = 0f;
+        if (!toastGroup.gameObject.activeSelf) toastGroup.gameObject.SetActive(true);
+    }
+
+    void Update()
+    {
+        if (!toastActive || !toastGroup) return;
+
+        toastTimer += Time.unscaledDeltaTime;
+        float a;
+        if (toastTimer <= toastFadeIn)
+        {
+            a = Mathf.InverseLerp(0f, toastFadeIn, toastTimer);
+        }
+        else if (toastTimer <= toastFadeIn + toastShow)
+        {
+            a = 1f;
+        }
+        else if (toastTimer <= toastFadeIn + toastShow + toastFadeOut)
+        {
+            a = 1f - Mathf.InverseLerp(toastFadeIn + toastShow, toastFadeIn + toastShow + toastFadeOut, toastTimer);
+        }
+        else
+        {
+            a = 0f;
+            toastActive = false;
+            toastGroup.gameObject.SetActive(false);
+        }
+        toastGroup.alpha = a;
+    }
 }
