@@ -1,10 +1,14 @@
-using UnityEngine;
-using System.Collections.Generic;
-using System.Reflection;
+using Game.Data;
 using Game.Events;
 using Game.Runtime;
-using Game.Data;
-using Game.UI; // EventHUDItem
+using Game.UI;
+using Ionic.Zlib;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using Unity.Collections;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace Game.UI
 {
@@ -43,11 +47,26 @@ namespace Game.UI
             }
         }
 
+        void ClearAllUI()
+        {
+            foreach (var kv in _items)
+            {
+                if (kv.Value) Destroy(kv.Value.gameObject);
+            }
+            _items.Clear();
+            _order.Clear();
+        }
+
         void OnEnable()
         {
             SubscribeSignals();
+
+            ClearAllUI();
+
             // 後から有効化された時でも現在の進行中イベントを復元
             RebuildFromManager();
+
+            if(contentRoot) LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
         }
 
         void OnDisable()
@@ -100,10 +119,17 @@ namespace Game.UI
 
         void HandleStarted(string id)
         {
+            Debug.Log($"[List] HandleStarted {id}");
             if (!TryGetData(id, out var data)) return;
+
             var item = GetOrCreate(id, data);
-            item.SetBody("開始しました。");
+            item.SetBody(BuildBodyInProgress(data));
+
+            // 進捗バーを 0 に（任意）
+            item.SetProgress01(0f);
+
             TrimToMax();
+            RebuildLayout();
         }
 
         void HandleCompleted(string id) => RemoveIfExists(id, "完了しました。");
@@ -192,19 +218,46 @@ namespace Game.UI
         // ====== Rebuild（途中合流に対応） ======
         public void RebuildFromManager()
         {
-            if (!eventManager) return;
+            if (!eventManager) { Debug.Log("[List] Rebuild: em=null"); return; }
+
+            ClearAllUI();
+
+            int added = 0;
 
             foreach (var rt in EnumerateRuntimesSafe(eventManager))
             {
                 if (rt == null) continue;
-                if (rt.State == EventState.Available || rt.State == EventState.InProgress)
+
+                var d = rt.Data;
+                switch (rt.State)
                 {
-                    var d = rt.Data;
-                    var item = GetOrCreate(d.eventId, d);
-                    item.SetBody(BuildBodyAvailable(d));
+                    case EventState.Available:
+                        {
+                            var item = GetOrCreate(d.eventId, d);
+                            item.SetBody(BuildBodyAvailable(d));
+                            // Available は進捗バーを消す
+                            item.SetProgress01(0f);
+                            added++;
+                            break;
+                        }
+                    case EventState.InProgress:
+                        {
+                            var item = GetOrCreate(d.eventId, d);
+                            item.SetBody(BuildBodyInProgress(d));
+                            // もし進捗値がとれるなら反映（なければ 0 でもOK）
+                            // rt に Progress (0..1) がある想定。無ければこの行は削除。
+                            item.SetProgress01(Mathf.Clamp01(rt.Progress));
+                            added++;
+                            break;
+                        }
+                        // Completed/Failed/Expired は表示しない
                 }
             }
+
             TrimToMax();
+
+            if (contentRoot) LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+            Debug.Log($"[List] Rebuild done. added={added}");
         }
 
         static IEnumerable<EventRuntime> EnumerateRuntimesSafe(EventManager em)
@@ -245,6 +298,37 @@ namespace Game.UI
         {
             get => eventManager;
             set => eventManager = value;
+        }
+
+        public void ForceRefreshNow()
+        {
+            StopAllCoroutines();
+            RebuildFromManager();
+            if (contentRoot)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+            }
+        }
+
+        public IEnumerator CoRefreshNextFrame()
+        {
+            yield return null;
+            ForceRefreshNow();
+        }
+
+        static string BuildBodyInProgress(EventData d)
+        {
+            var place = string.IsNullOrEmpty(d.location.id) ? "目的地" : d.location.id;
+            return $"進行中：{place}";
+        }
+
+        void RebuildLayout()
+        {
+            if (!contentRoot) return;
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
+            Canvas.ForceUpdateCanvases();
         }
     }
 }

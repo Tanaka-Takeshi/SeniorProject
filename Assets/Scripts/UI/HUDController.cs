@@ -3,6 +3,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine.UI;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 public class HUDController : MonoBehaviour
 {
@@ -33,6 +34,10 @@ public class HUDController : MonoBehaviour
 
     float toastTimer = 0f;
     bool toastActive = false;
+    float toastStartRealtime = 0f;
+
+    bool suppressToasts = false;
+    Queue<string> toastQueue = new Queue<string>();
 
     private Coroutine _fadeCo;
 
@@ -166,6 +171,11 @@ public class HUDController : MonoBehaviour
     {
         if (panelRoot == null) return;
 
+        if(!visible)
+        {
+            CancelToast();
+        }
+
         if (canvasGroup == null || fadeSec <= 0f || instant)
         {
             panelRoot.SetActive(visible);
@@ -269,9 +279,20 @@ public class HUDController : MonoBehaviour
     public void ShowToast(string message)
     {
         if (!toastText || !toastGroup) return;
+
+        // 抑止中ならキューに積んで終了（表示しない）
+        if (suppressToasts)
+        {
+            if (!string.IsNullOrEmpty(message))
+                toastQueue.Enqueue(message);
+            return;
+        }
+
+        // ここから通常表示（常にリスタートする）
         toastText.text = message ?? "";
         toastTimer = 0f;
         toastActive = true;
+        toastStartRealtime = Time.realtimeSinceStartup; // ★リアルタイム開始時刻
         toastGroup.alpha = 0f;
         if (!toastGroup.gameObject.activeSelf) toastGroup.gameObject.SetActive(true);
     }
@@ -280,26 +301,62 @@ public class HUDController : MonoBehaviour
     {
         if (!toastActive || !toastGroup) return;
 
-        toastTimer += Time.unscaledDeltaTime;
+        float elapsed = Time.realtimeSinceStartup - toastStartRealtime; // ★UIが止まっても進む
         float a;
-        if (toastTimer <= toastFadeIn)
-        {
-            a = Mathf.InverseLerp(0f, toastFadeIn, toastTimer);
-        }
-        else if (toastTimer <= toastFadeIn + toastShow)
-        {
+
+        if (elapsed <= toastFadeIn)
+            a = Mathf.InverseLerp(0f, toastFadeIn, elapsed);
+        else if (elapsed <= toastFadeIn + toastShow)
             a = 1f;
-        }
-        else if (toastTimer <= toastFadeIn + toastShow + toastFadeOut)
-        {
-            a = 1f - Mathf.InverseLerp(toastFadeIn + toastShow, toastFadeIn + toastShow + toastFadeOut, toastTimer);
-        }
+        else if (elapsed <= toastFadeIn + toastShow + toastFadeOut)
+            a = 1f - Mathf.InverseLerp(toastFadeIn + toastShow, toastFadeIn + toastShow + toastFadeOut, elapsed);
         else
         {
             a = 0f;
             toastActive = false;
             toastGroup.gameObject.SetActive(false);
         }
+
         toastGroup.alpha = a;
+    }
+
+    public void CancelToast()
+    {
+        toastActive = false;
+        toastTimer = 0f;
+        toastStartRealtime = 0f;
+        if (toastGroup)
+        {
+            toastGroup.alpha = 0f;
+            toastGroup.gameObject.SetActive(false);
+        }
+    }
+
+    public void EnterToastSuppression(bool killExisting = true, bool clearQueued = false)
+    {
+        if (killExisting) CancelToast();
+        suppressToasts = true;
+        if (clearQueued) toastQueue.Clear();
+    }
+
+    public void ExitToastSuppression(bool flushQueued = true, float flushInterval = 0.05f)
+    {
+        suppressToasts = false;
+
+        if (flushQueued && toastQueue.Count > 0)
+        {
+            // 1つだけ即時表示（残りは簡易的に連続再生）
+            var first = toastQueue.Dequeue();
+            ShowToast(first);
+
+            // 残りはコルーチン等で間隔再生しても良いが、簡易に一括破棄でもOK
+            toastQueue.Clear();
+        }
+    }
+
+    void OnDisable()
+    {
+        // パネルが非アクティブ化された瞬間に表示中を殺す
+        CancelToast();
     }
 }

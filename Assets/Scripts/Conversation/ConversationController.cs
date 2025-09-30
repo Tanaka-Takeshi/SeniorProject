@@ -10,6 +10,7 @@ namespace Game.Conversation
 
         [Header("Refs")]
         public HUDController hud;                  // 会話用HUD（Panel_ConversationHUD）
+        public HUDController worldHud;             // 常時HUD
         public CameraDirector cameraDirector;      // 会話カメラ切替
         public PlayerInteractor playerInteractor;  // 会話中は無効化
 
@@ -41,6 +42,12 @@ namespace Game.Conversation
         {
             if (IsInConversation) return;
             IsInConversation = true;
+
+            if (worldHud) worldHud.EnterToastSuppression(killExisting: true, clearQueued: false);
+
+            var toast = panelToast ? panelToast.GetComponentInChildren<ToastUI>(true) : null;
+            if (toast) { toast.EnterSuppression(clearQueued: false, hideNow: true); }
+
             currentNpcTarget = npcHeadOrGroup;
 
             if (playerInteractor) playerInteractor.enabled = false;
@@ -102,6 +109,26 @@ namespace Game.Conversation
             if (panelToast) panelToast.SetActive(true);
             if (panelHUDList) panelHUDList.SetActive(true);
             if (interactPrompt) interactPrompt.SetActive(true);
+
+            if (panelHUDList)
+            {
+                var list = panelHUDList.GetComponentInChildren<Game.UI.EventHUDList>(true);
+                if (list)
+                {
+                    var em = FindFirstObjectByType<Game.Runtime.EventManager>();
+                    if (em != null) em.EvaluateFrame();
+
+                    // 直ちに一度更新
+                    list.ForceRefreshNow();
+                    // 次のフレームでもう一度（レイアウト/状態のズレ吸収）
+                    StartCoroutine(list.CoRefreshNextFrame());
+                }
+            }
+
+            var toast = panelToast ? panelToast.GetComponentInChildren<ToastUI>(true) : null;
+            if (toast) { toast.ExitSuppression(); }
+
+            if (worldHud) worldHud.ExitToastSuppression(flushQueued: true);
 
             IsInConversation = false;
             currentNpcTarget = null;

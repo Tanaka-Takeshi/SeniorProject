@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   events:
   - {fileID: 11400000, guid: a174c9618f9b5c04f98d1459fb956143, type: 2}
+  - {fileID: 11400000, guid: 86fafff53915f614c971bb2a5940fc5f, type: 2}
   knownAreaIds: []
   overrideSettings: {fileID: 11400000, guid: b020f1dc25e0e6b419297addeb8b2a15, type: 2}

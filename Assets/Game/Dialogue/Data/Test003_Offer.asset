@@ -10,23 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ef399955a7fe248bd4f67e4da9d981, type: 3}
-  m_Name: test002
+  m_Name: Test003_Offer
   m_EditorClassIdentifier: 
-  id: npc002
-  speakerName: NPC
+  id: Talk_Offer
+  speakerName: "\u6751\u4EBA"
   lines:
-  - "\u30B1\u30FC\u30AD\u3068\u30D1\u30A4\u30CA\u30C3\u30D7\u30EB\u3069\u3061\u3089\u304C\u597D\u304D\u3067\u3059\u304B\uFF1F"
+  - "\u3053\u3093\u306B\u3061\u306F\uFF01\u3000\u8981\u4EF6\u306F\u3042\u308A\u307E\u3059\u304B\uFF1F"
+  - "\u3069\u3046\u3057\u307E\u3059\uFF1F"
   choices:
-  - text: "\u30B1\u30FC\u30AD"
-    nextId: npc002_cake
+  - text: "\u30AF\u30A8\u30B9\u30C8\u3092\u958B\u59CB\u3059\u308B"
+    nextId: 
     flagOps:
     - operation: 0
       key: 1
     eventSignalId: Quest.Town01.Start
     signalKind: 3
     conditions: []
-  - text: "\u30D1\u30A4\u30CA\u30C3\u30D7\u30EB"
-    nextId: npc002_pine
+  - text: "\u307E\u305F\u4ECA\u5EA6\uFF01"
+    nextId: 
     flagOps: []
     eventSignalId: 
     signalKind: 0

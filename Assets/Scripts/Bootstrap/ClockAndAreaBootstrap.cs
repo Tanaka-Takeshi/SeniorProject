@@ -3,20 +3,22 @@ using UnityEngine;
 using System.Reflection;
 using Game.Runtime;
 
-[DefaultExecutionOrder(-1000)]  // š EventManager ‚æ‚èæ‚É“®‚­
+[DefaultExecutionOrder(-1000)]  // â˜… EventManager ã‚ˆã‚Šå…ˆã«å‹•ã
 public class ClockAndAreaBootstrap : MonoBehaviour
 {
     [SerializeField] MonoBehaviour clockBehaviour;   // SimpleClock
     [SerializeField] SimpleLocationResolver locator;
-    [SerializeField] string areaId = "TestArea";
+    [SerializeField] string areaId = "Town";
 
     MethodInfo jump;
     void Awake()
     {
+        FlagService.Load();
+
         if (clockBehaviour != null)
         {
             jump = clockBehaviour.GetType().GetMethod("Jump", BindingFlags.Public | BindingFlags.Instance);
-            jump?.Invoke(clockBehaviour, new object[] { 0f });  // š 00:00 ‚ÉŒÅ’è
+            jump?.Invoke(clockBehaviour, new object[] { 0f });  // â˜… 00:00 ã«å›ºå®š
         }
         if (locator != null) locator.SetArea(areaId);
     }

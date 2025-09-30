@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ef399955a7fe248bd4f67e4da9d981, type: 3}
-  m_Name: test002_pine
+  m_Name: Test003_WithItem
   m_EditorClassIdentifier: 
-  id: npc002_pine
-  speakerName: NPC
+  id: Talk_WithItem
+  speakerName: "\u6751\u4EBA"
   lines:
-  - "\u30D1\u30A4\u30CA\u30DD\u30FC\u3002"
+  - "\u305D\u306E\u7279\u5225\u306A\u30A2\u30A4\u30C6\u30E0\u3092\u6301\u3063\u3066\u3044\u308B\u3093\u3067\u3059\u306D\uFF01"
   choices: []
+  autoRoutes: []

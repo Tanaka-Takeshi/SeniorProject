@@ -19,6 +19,8 @@ public sealed class ToastUI : MonoBehaviour
     private Coroutine _runner;
     private bool _running;
 
+    private bool _suppressed = false;
+
     // ▼ テスト観測用（任意利用）
     public event Action<string> OnShown;
     public event Action<string> OnHidden;
@@ -49,6 +51,20 @@ public sealed class ToastUI : MonoBehaviour
     // 期間指定版（2引数）
     public void Show(string message, float duration) => Enqueue(message, Mathf.Max(0f, duration));
 
+    public void EnterSuppression(bool clearQueued = false, bool hideNow = true)
+    {
+        _suppressed = true;
+        if (clearQueued) _queue.Clear();
+        if (hideNow) InstantHide();
+    }
+
+    public void ExitSuppression()
+    {
+        _suppressed = false;
+        // 抑止中に積まれたものがあれば再生開始
+        if (!_running && _queue.Count > 0) _runner = StartCoroutine(RunQueue());
+    }
+
     public void ClearQueue(bool hideNow = false)
     {
         _queue.Clear();
@@ -71,6 +87,8 @@ public sealed class ToastUI : MonoBehaviour
         if (!gameObject.activeSelf) gameObject.SetActive(true);
         if (!enabled) enabled = true;
         if (panelRoot && !panelRoot.activeSelf) panelRoot.SetActive(true);
+
+        if (_suppressed) return;
 
         if (!_running) _runner = StartCoroutine(RunQueue());
     }
@@ -135,6 +153,8 @@ public sealed class ToastUI : MonoBehaviour
                 canvasGroup.blocksRaycasts = false;
                 OnHidden?.Invoke(msg);
             }
+
+            if (_suppressed) break;
         }
 
         _running = false;
@@ -150,5 +170,13 @@ public sealed class ToastUI : MonoBehaviour
             canvasGroup.blocksRaycasts = false;
         }
         // GameObject 自体は非アクティブにしない
+    }
+
+    void OnDisable()
+    {
+        if (_runner != null) StopCoroutine(_runner);
+        _runner = null;
+        _running = false;
+        InstantHide();
     }
 }

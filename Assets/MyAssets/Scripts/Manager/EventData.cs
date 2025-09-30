@@ -44,118 +44,118 @@ public class EventData : ScriptableObject
 [Serializable]
 public class EventEntry
 {
-    // ƒCƒxƒ“ƒg”Ô†
+    // ã‚¤ãƒ™ãƒ³ãƒˆç•ªå·
     public float eventNo;
 
-    // ŠJnêŠ
+    // é–‹å§‹å ´æ‰€
     public string triggerZoneName;
-    // ŠJnƒIƒuƒWƒFƒNƒg
+    // é–‹å§‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
     public string startObjectName;
-    // ŠJnŠÔ
+    // é–‹å§‹æ™‚é–“
     public string startTiming;
-    // I—¹ŠÔ
+    // çµ‚äº†æ™‚é–“
     public string endTiming;
 
-    // ŠJnƒtƒ‰ƒO
+    // é–‹å§‹ãƒ•ãƒ©ã‚°
     [HideInInspector] public bool isTriggered;
-    // I—¹ƒtƒ‰ƒO
+    // çµ‚äº†ãƒ•ãƒ©ã‚°
     [HideInInspector] public bool isEnded;
 
 
-    // ƒCƒxƒ“ƒgƒXƒe[ƒ^ƒX
+    // ã‚¤ãƒ™ãƒ³ãƒˆã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
     [HideInInspector] public EventStatus status;
-    // ŠJní•Ê
+    // é–‹å§‹ç¨®åˆ¥
     [HideInInspector] public StartType startType;
-    // ŠJnƒIƒuƒWƒFƒNƒg
+    // é–‹å§‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
     [HideInInspector] public GameObject startObject;
-    // ŠJnŠÔ
+    // é–‹å§‹æ™‚é–“
     [HideInInspector] public int startDay;
     [HideInInspector] public TimeManager.TimeOfDay startTimeOfDay;
-    // I—¹ŠÔ
+    // çµ‚äº†æ™‚é–“
     [HideInInspector] public int endDay;
     [HideInInspector] public TimeSpan endTime;
 
     public void InitializeEvent()
     {
-        // ŠJnƒIƒuƒWƒFƒNƒgİ’è
+        // é–‹å§‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆè¨­å®š
         {
             if(string.IsNullOrEmpty(startObjectName))
             {
-                Debug.LogWarning($"[{nameof(EventEntry)}] startObjectName ‚ª‹ó‚Å‚·B");
+                Debug.LogWarning($"[{nameof(EventEntry)}] startObjectName ãŒç©ºã§ã™ã€‚");
             }
             else
             {
-                // ƒV[ƒ“ã‚©‚ç–¼‘O‚ÅŒŸõiÅ‰¨g‚Á‚½‚à‚Ì‚ğ•Ô‚·j
+                // ã‚·ãƒ¼ãƒ³ä¸Šã‹ã‚‰åå‰ã§æ¤œç´¢ï¼ˆæœ€åˆè€³ä½¿ã£ãŸã‚‚ã®ã‚’è¿”ã™ï¼‰
                 startObject = GameObject.Find(startObjectName);
 
                 if(startObject == null)
                 {
-                    Debug.LogError($"[{nameof(EventEntry)}] ƒV[ƒ“‚É '{startObjectName}' ‚Æ‚¢‚¤–¼‘O‚Ì GameObject ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB");
+                    Debug.LogError($"[{nameof(EventEntry)}] ã‚·ãƒ¼ãƒ³ã« '{startObjectName}' ã¨ã„ã†åå‰ã® GameObject ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã€‚");
                 }
             }
         }
 
-        // ŠJnŠÔİ’è
+        // é–‹å§‹æ™‚é–“è¨­å®š
         {
-            // “ü—Íƒ`ƒFƒbƒN
+            // å…¥åŠ›ãƒã‚§ãƒƒã‚¯
             if (string.IsNullOrEmpty(startTiming))
             {
-                Debug.LogWarning($"[{nameof(EventEntry)}] startTiming‚ª‹ó‚Å‚·B");
+                Debug.LogWarning($"[{nameof(EventEntry)}] startTimingãŒç©ºã§ã™ã€‚");
                 return;
             }
 
-            // g:h ‚Å•ªŠ„
+            // â€œ:â€ ã§åˆ†å‰²
             var parts = startTiming.Split(':');
             if (parts.Length != 2)
             {
-                Debug.LogError($"[{nameof(EventEntry)} startTiming‚Ì‘®ƒGƒ‰[: {startTiming}");
+                Debug.LogError($"[{nameof(EventEntry)} startTimingã®æ›¸å¼ã‚¨ãƒ©ãƒ¼: {startTiming}");
                 return;
             }
 
-            // “ú”•”•ª‚ğint‚É•ÏŠ·
+            // æ—¥æ•°éƒ¨åˆ†ã‚’intã«å¤‰æ›
             if (!int.TryParse(parts[0], out startDay))
             {
-                Debug.LogError($"[{nameof(EventEntry)}] startDay ‚É•ÏŠ·¸”s: {parts[0]}");
+                Debug.LogError($"[{nameof(EventEntry)}] startDay ã«å¤‰æ›å¤±æ•—: {parts[0]}");
             }
 
-            // ŠÔ‘Ñ•”•ª‚ğenum‚É•ÏŠ·
+            // æ™‚é–“å¸¯éƒ¨åˆ†ã‚’enumã«å¤‰æ›
             if (!Enum.TryParse<TimeManager.TimeOfDay>(parts[1], out startTimeOfDay))
             {
-                Debug.LogError($"[{nameof(EventEntry)}] startTimeOrDay ‚É•ÏŠ·¸”s: {parts[1]}");
+                Debug.LogError($"[{nameof(EventEntry)}] startTimeOrDay ã«å¤‰æ›å¤±æ•—: {parts[1]}");
             }
         }
 
-        // I—¹ŠÔİ’è
+        // çµ‚äº†æ™‚é–“è¨­å®š
         {
             if(string.IsNullOrEmpty(endTiming))
             {
-                Debug.LogWarning($"[{nameof(EventEntry)}] endTiming ‚ª‹ó‚Å‚·B");
+                Debug.LogWarning($"[{nameof(EventEntry)}] endTiming ãŒç©ºã§ã™ã€‚");
             }
             else
             {
-                // Å‰‚Ì g:h‚Å•ªŠ„
+                // æœ€åˆã® â€œ:â€ã§åˆ†å‰²
                 int idx = endTiming.IndexOf(':');
                 if (idx > 0)
                 {
-                    // “ú•t‚ÆŠÔ
+                    // æ—¥ä»˜ã¨æ™‚é–“
                     string dayPart = endTiming.Substring(0, idx);
                     string timePart = endTiming.Substring(idx + 1);
 
-                    // dayPart‚ğendDay‚É
+                    // dayPartã‚’endDayã«
                     if(!int.TryParse(dayPart, out endDay))
                     {
-                        Debug.LogError($"[{nameof(EventEntry)}] endDay •ÏŠ·¸”s: {dayPart}");
+                        Debug.LogError($"[{nameof(EventEntry)}] endDay å¤‰æ›å¤±æ•—: {dayPart}");
                     }
 
-                    // timePart‚ğendTime‚É
+                    // timePartã‚’endTimeã«
                     if(!TimeSpan.TryParse(timePart, out endTime))
                     {
-                        Debug.LogError($"[{nameof(EventEntry)}] endTime •ÏŠ·¸”s: {timePart}");
+                        Debug.LogError($"[{nameof(EventEntry)}] endTime å¤‰æ›å¤±æ•—: {timePart}");
                     }
                 }
                 else
                 {
-                    Debug.LogError($"[{nameof(EventEntry)}] endTiming ‚Ì‘®ƒGƒ‰[: {endTiming}");
+                    Debug.LogError($"[{nameof(EventEntry)}] endTiming ã®æ›¸å¼ã‚¨ãƒ©ãƒ¼: {endTiming}");
                 }
             }
         }
