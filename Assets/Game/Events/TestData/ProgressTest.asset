@@ -10,24 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 21351e31f8b969f4baf170eb173778b1, type: 3}
-  m_Name: QuestTest001
+  m_Name: ProgressTest
   m_EditorClassIdentifier: 
-  eventId: 
+  eventId: Sub.Progress
   type: 1
-  appearAt: 
-  startDeadline: 
-  endDeadline: 
+  appearAt: 00:00
+  startDeadline: 00:20
+  endDeadline: 01:00
   location:
     kind: 0
-    id: 
+    id: TestArea
     worldPos: {x: 0, y: 0, z: 0}
   requiresButtonPress: 1
-  autoStartOnLocation: 1
   dependencies: []
-  altCompleteThreshold: 0.5
+  altCompleteThreshold: 0.6
   weekdayRule:
     allowedWeekdays: 
     hasRequireHolidayFlag: 0
     requireHoliday: 0
   notes: 
-  interactNeedsLocation: 1

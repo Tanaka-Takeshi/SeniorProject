@@ -6,6 +6,8 @@ public enum GameFlag
     NpcHelped,
     ItemReceived,
     BossDefeated,
-    HasSpecialItem
+    HasSpecialItem,
+
+    HasApple
     // 必要に応じて追加
 }

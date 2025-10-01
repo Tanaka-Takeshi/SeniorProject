@@ -35,6 +35,22 @@ public class QuestService : MonoBehaviour
     {
         if (string.IsNullOrEmpty(questId)) return null;
         foreach (var q in quests) if (q && q.questId == questId) return q;
+
+        // 見つからないときに手掛かりログ
+#if UNITY_EDITOR
+        System.Text.StringBuilder sb = new();
+        sb.Append("[Quest] Find not found: ").Append(questId).Append(". Registered=[");
+        bool first = true;
+        foreach (var q in quests)
+        {
+            if (!q) continue;
+            if (!first) sb.Append(", ");
+            sb.Append(q.questId);
+            first = false;
+        }
+        sb.Append("]");
+        Debug.LogWarning(sb.ToString());
+#endif
         return null;
     }
 
@@ -88,40 +104,78 @@ public class QuestService : MonoBehaviour
     }
 
     /// <summary>
-    /// 進行中クエストの「現在の要求 eventId」と一致したらステップを進める。
-    /// （Started / Custom を進行トリガに使用）
+    /// 進行中クエストに対してイベント通知。
+    /// 現在のステップが要求する eventId と一致し、かつ kind が Started/Custom のときだけ進行させる。
+    /// それ以外は無視し、理由をログに出す（デバッグ用）。
     /// </summary>
     public void NotifyEventSignal(string eventId, ConversationSignalKind kind)
     {
         if (string.IsNullOrEmpty(eventId)) return;
 
+        // 受け付けるシグナル種別を限定
+        bool kindAcceptable = (kind == ConversationSignalKind.Started || kind == ConversationSignalKind.Custom);
+
         foreach (var q in quests)
         {
             if (!q) continue;
+
+            // 対象は Active なクエストのみ
             if (GetState(q.questId) != QuestState.Active) continue;
 
             var step = GetCurrentStep(q.questId);
             var list = q.stepEventIds;
-            if (list == null || list.Count == 0) continue;
-            if (step >= list.Count) continue;
+
+            // ステップ配列が空 / 範囲外ならスキップ
+            if (list == null || list.Count == 0)
+            {
+                Debug.Log($"[Quest] IGNORED (no steps) event '{eventId}' for quest={q.questId}");
+                continue;
+            }
+            if (step >= list.Count)
+            {
+                Debug.Log($"[Quest] IGNORED (already last) event '{eventId}' for quest={q.questId}");
+                continue;
+            }
 
             var requireId = list[step];
-            if (string.IsNullOrEmpty(requireId)) continue;
-
-            if (eventId == requireId && (kind == ConversationSignalKind.Started || kind == ConversationSignalKind.Custom))
+            if (string.IsNullOrEmpty(requireId))
             {
-                _stepIndex[q.questId] = step + 1;
-                Debug.Log($"[Quest] Step ✓ ({q.questId}) {requireId} -> step={_stepIndex[q.questId]}/{list.Count}");
-                Toast(null, $"目標達成：{ReadableEvent(requireId)}");
-
-                if (_stepIndex[q.questId] >= list.Count)
-                {
-                    CompleteQuest(q.questId);
-                }
-                Save();
+                Debug.Log($"[Quest] IGNORED (empty required id) event '{eventId}' quest={q.questId} step={step}");
+                continue;
             }
+
+            // 種別が許容外なら無視（理由を出す）
+            if (!kindAcceptable)
+            {
+                Debug.Log($"[Quest] IGNORED (kind {kind}) event '{eventId}' quest={q.questId} expect='{requireId}' step={step}");
+                continue;
+            }
+
+            // 順序チェック：いま要求しているIDと一致するときだけ進める
+            if (eventId != requireId)
+            {
+                Debug.Log($"[Quest] IGNORED event '{eventId}' (expect '{requireId}') quest={q.questId} step={step}");
+                continue;
+            }
+
+            // --- ここから進行処理 ---
+            int nextStep = step + 1;
+            _stepIndex[q.questId] = nextStep;
+
+            Debug.Log($"[Quest] Step ✓ ({q.questId}) {requireId} -> step={nextStep}/{list.Count}");
+            Toast(null, $"目標達成：{ReadableEvent(requireId)}");
+
+            // 全ステップ達成で完了
+            if (nextStep >= list.Count)
+            {
+                CompleteQuest(q.questId);
+            }
+
+            Save();
+            // 同一 eventId を複数クエストが同時要求している可能性もあるので continue せずループ継続
         }
     }
+
 
     public void MarkEventCompleted(string eventId)
         => NotifyEventSignal(eventId, ConversationSignalKind.Custom);

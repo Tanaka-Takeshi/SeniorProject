@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ScenarioRegistry
   m_EditorClassIdentifier: 
   events:
-  - {fileID: 11400000, guid: a174c9618f9b5c04f98d1459fb956143, type: 2}
-  - {fileID: 11400000, guid: 86fafff53915f614c971bb2a5940fc5f, type: 2}
+  - {fileID: 11400000, guid: 6f0b02141c0fd984aa2bb5e5aeac0660, type: 2}
+  - {fileID: 11400000, guid: 4f14659847b095d4f8ecc48002da113d, type: 2}
   knownAreaIds: []
   overrideSettings: {fileID: 11400000, guid: b020f1dc25e0e6b419297addeb8b2a15, type: 2}

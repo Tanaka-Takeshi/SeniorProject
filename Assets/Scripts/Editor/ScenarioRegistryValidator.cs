@@ -319,6 +319,7 @@ public static class ScenarioRegistryPlayGuard
 {
     private const bool CancelPlayOnError = true;   // false にすれば通知だけにできます
 
+#if !SCENARIO_PLAY_GUARD_OFF
     static ScenarioRegistryPlayGuard()
     {
         EditorApplication.playModeStateChanged += OnPlayModeChanged;
@@ -347,6 +348,7 @@ public static class ScenarioRegistryPlayGuard
             }
         }
     }
+#endif
 }
 #endregion
 

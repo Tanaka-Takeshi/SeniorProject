@@ -26,6 +26,7 @@ namespace Game.Data
         [Header("Start Triggers (New)")]
         [Tooltip("到達したら自動で開始してよいか（Available中に LocationSatisfied(location) で即Start）。")]
         public bool autoStartOnLocation = true;    // ★ 新仕様：場所到達でも開始できる
+        public bool interactNeedsLocation = true;
 
         [Header("Dependencies & Progress")]
         public List<string> dependencies = new();   // 依存イベントID
@@ -35,8 +36,6 @@ namespace Game.Data
         public WeekdayRule weekdayRule;
 
         [TextArea] public string notes;
-
-        public bool interactNeedsLocation = true;
     }
 
     [CreateAssetMenu(menuName = "Game/Data/QuestData")]

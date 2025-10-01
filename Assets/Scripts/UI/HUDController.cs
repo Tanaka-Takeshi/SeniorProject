@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System.Diagnostics;
 using System.Collections.Generic;
 
+#pragma warning disable 0414
 public class HUDController : MonoBehaviour
 {
     [Header("References")]
@@ -236,6 +237,11 @@ public class HUDController : MonoBehaviour
 #if UNITY_EDITOR
     void OnValidate()
     {
+        if (toastGroup && toastText)
+        {
+            return;
+        }
+
         if (!titleTMP) UnityEngine.Debug.LogWarning("[HUD] titleTMP is not assigned.", this);
         if (!bodyTMP) UnityEngine.Debug.LogWarning("[HUD] bodyTMP is not assigned.", this);
         if (!panelRoot) UnityEngine.Debug.LogWarning("[HUD] panelRoot is not assigned.", this);
@@ -360,3 +366,4 @@ public class HUDController : MonoBehaviour
         CancelToast();
     }
 }
+#pragma warning restore 0414
