@@ -8,6 +8,9 @@ public enum GameFlag
     BossDefeated,
     HasSpecialItem,
 
-    HasApple
+    HasApple_E1,
+    HasApple_E2,
+    HasApple_E3
+
     // 必要に応じて追加
 }

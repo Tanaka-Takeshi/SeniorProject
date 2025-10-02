@@ -10,22 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7ef399955a7fe248bd4f67e4da9d981, type: 3}
-  m_Name: Test004_3
+  m_Name: Test004_6
   m_EditorClassIdentifier: 
-  id: Talk_Report
+  id: Talk_E2Offer
   speakerName: NPC
   lines:
-  - "\u304A\u3001\u30EA\u30F3\u30B4\u306F\u624B\u306B\u5165\u3063\u305F\u304B\u3044\uFF1F"
+  - "\u6B21\u306E\u304A\u9858\u3044\u304C\u3042\u308B\u3093\u3060"
+  - "\u307E\u305F\u307E\u305F \u2018\u30EA\u30F3\u30B4\u305D\u306E2\u2019 \u3092\u6301\u3063\u3066\u304D\u3066\u304F\u308C\u306A\u3044\uFF1F"
   choices:
-  - text: "\u306F\u3044\u3001\u6E21\u3057\u307E\u3059"
-    nextId: Talk_Thanks
+  - text: "\u5F15\u304D\u53D7\u3051\u308B"
+    nextId: 
     flagOps: []
-    eventSignalId: Event.Progress:Event.E1:+0.5
-    signalKind: 4
-    conditions:
-    - key: 6
-      mustBeTrue: 1
-  - text: "\u307E\u3060\u3067\u3059"
+    eventSignalId: Event.Start:Event.E2
+    signalKind: 3
+    conditions: []
+  - text: "\u3084\u3081\u3066\u304A\u304F"
     nextId: 
     flagOps: []
     eventSignalId: 

@@ -20,7 +20,7 @@ MonoBehaviour:
   - text: "\u5F15\u304D\u53D7\u3051\u308B"
     nextId: Talk_AfterStart
     flagOps: []
-    eventSignalId: Quest.Start:Quest.Town01
+    eventSignalId: Event.Start:Event.E1
     signalKind: 3
     conditions: []
   - text: "\u3054\u3081\u3093\u3001\u307E\u305F\u4ECA\u5EA6"

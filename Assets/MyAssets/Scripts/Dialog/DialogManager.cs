@@ -6,29 +6,29 @@ using UnityEngine.SocialPlatforms.GameCenter;
 
 public class DialogManager : MonoBehaviour
 {
-    #region •Ï”
+    #region å¤‰æ•°
     public static DialogManager Instance;
 
     [Header("UI")]
-    [SerializeField] GameObject dialogUI;           // ‰ï˜bUI‘S‘Ì
-    [SerializeField] TextMeshProUGUI nameText;      // NPC‚Ì–¼‘O
-    [SerializeField] TextMeshProUGUI dialogText;    // ƒZƒŠƒt•\¦
+    [SerializeField] GameObject dialogUI;           // ä¼šè©±UIå…¨ä½“
+    [SerializeField] TextMeshProUGUI nameText;      // NPCã®åå‰
+    [SerializeField] TextMeshProUGUI dialogText;    // ã‚»ãƒªãƒ•è¡¨ç¤º
 
     [Header("Camera")]
-    [SerializeField] Camera mainCamera;             // ƒƒCƒ“ƒJƒƒ‰
-    [SerializeField] Camera dialogCamera;           // ‰ï˜b—pƒJƒƒ‰
+    [SerializeField] Camera mainCamera;             // ãƒ¡ã‚¤ãƒ³ã‚«ãƒ¡ãƒ©
+    [SerializeField] Camera dialogCamera;           // ä¼šè©±ç”¨ã‚«ãƒ¡ãƒ©
 
     [Header("Camera Offset Settings")]
-    [SerializeField] Vector3 cameraOffset = new Vector3(0, 5, -5);  // ˜ëáÕƒJƒƒ‰‚ÌƒIƒtƒZƒbƒg
-    [SerializeField] float lookHeight = 1.5f;    // n“_‚Ì‚‚³
+    [SerializeField] Vector3 cameraOffset = new Vector3(0, 5, -5);  // ä¿¯ç°ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    [SerializeField] float lookHeight = 1.5f;    // å§‹ç‚¹ã®é«˜ã•
 
-    private Queue<string> sentences;                // ƒZƒŠƒt‚ÌƒLƒ…[
-    private Transform currentPlayer;                // ƒvƒŒƒCƒ„[‚Ìp¨ó‘Ô
-    private Transform currentNPC;                   // NPC‚ÌˆÊ’uó‘Ô
-    private bool isDialogActive = false;            // ‰ï˜bó‘Ô
+    private Queue<string> sentences;                // ã‚»ãƒªãƒ•ã®ã‚­ãƒ¥ãƒ¼
+    private Transform currentPlayer;                // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å§¿å‹¢çŠ¶æ…‹
+    private Transform currentNPC;                   // NPCã®ä½ç½®çŠ¶æ…‹
+    private bool isDialogActive = false;            // ä¼šè©±çŠ¶æ…‹
     #endregion
 
-    #region ƒZƒbƒ^[AƒQƒbƒ^[
+    #region ã‚»ãƒƒã‚¿ãƒ¼ã€ã‚²ãƒƒã‚¿ãƒ¼
     public bool IsDialogActive() { return isDialogActive; }
 
     #endregion
@@ -37,7 +37,7 @@ public class DialogManager : MonoBehaviour
 
     private void Awake()
     {
-        // ƒVƒ“ƒOƒ‹ƒgƒ“
+        // ã‚·ãƒ³ã‚°ãƒ«ãƒˆãƒ³
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
@@ -45,7 +45,7 @@ public class DialogManager : MonoBehaviour
     }
     private void Start()
     {
-        Debug.Log("DialogManager Start() ŒÄ‚Ño‚µ");
+        Debug.Log("DialogManager Start() å‘¼ã³å‡ºã—");
     }
 
     private void Update()
@@ -55,77 +55,77 @@ public class DialogManager : MonoBehaviour
         //    DisplayNextSentence();
         //}
 
-        Debug.Log("UpdateŒÄ‚Ño‚µ’†");
+        Debug.Log("Updateå‘¼ã³å‡ºã—ä¸­");
 
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            Debug.Log("EnterƒL[‚ª‰Ÿ‚³‚ê‚½");
+            Debug.Log("Enterã‚­ãƒ¼ãŒæŠ¼ã•ã‚ŒãŸ");
 
-            if(isDialogActive)
+            if (isDialogActive)
             {
-                Debug.Log("¨ ‰ï˜b’†FDisplayNextSentence ‚ğŒÄ‚Ñ‚Ü‚·");
+                Debug.Log("â†’ ä¼šè©±ä¸­ï¼šDisplayNextSentence ã‚’å‘¼ã³ã¾ã™");
                 DisplayNextSentence();
             }
             else
             {
-                Debug.Log("¨ ‰ï˜b’†‚Å‚Í‚È‚¢");
+                Debug.Log("â†’ ä¼šè©±ä¸­ã§ã¯ãªã„");
             }
         }
     }
 
     public void StartDialog(Dialog dialog, Transform player, Transform npc)
     {
-        // ˆø”‚ÌƒvƒŒƒCƒ„[ANPCî•ñ‚ğ‘ã“ü
+        // å¼•æ•°ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€NPCæƒ…å ±ã‚’ä»£å…¥
         currentPlayer = player;
         currentNPC = npc;
 
-        // UI‚ğ‰¼€ó‘Ô‚É‚µA‰ï˜b’†‚É‚·‚é
+        // UIã‚’ä»®æ­»çŠ¶æ…‹ã«ã—ã€ä¼šè©±ä¸­ã«ã™ã‚‹
         dialogUI.SetActive(true);
         isDialogActive = true;
 
         nameText.text = dialog.npcName;
         sentences.Clear();
 
-        // •¶š—ñ‚ğƒZƒŠƒtƒLƒ…[‚É’Ç‰Á
-        foreach(string sentence in dialog.sentences)
+        // æ–‡å­—åˆ—ã‚’ã‚»ãƒªãƒ•ã‚­ãƒ¥ãƒ¼ã«è¿½åŠ 
+        foreach (string sentence in dialog.sentences)
         {
             sentences.Enqueue(sentence);
         }
 
-        // ƒLƒƒƒ‰ƒNƒ^[‚ğŒü‚©‚¢‡‚í‚¹‚É‚·‚é
+        // ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã‚’å‘ã‹ã„åˆã‚ã›ã«ã™ã‚‹
         FaceEachOther(player, npc);
 
-        // ƒJƒƒ‰Ø‚è‘Ö‚¦
-        if(mainCamera != null) mainCamera.enabled = false;
-        if(dialogCamera != null)
+        // ã‚«ãƒ¡ãƒ©åˆ‡ã‚Šæ›¿ãˆ
+        if (mainCamera != null) mainCamera.enabled = false;
+        if (dialogCamera != null)
         {
             dialogCamera.enabled = true;
             PositionDialogCamera(player.position, npc.position);
         }
 
-        // ˆÚ“®ƒƒbƒN
-        if(player.TryGetComponent(out ThirdPersonController move))
+        // ç§»å‹•ãƒ­ãƒƒã‚¯
+        if (player.TryGetComponent(out ThirdPersonController move))
         {
             move.canMove = false;
         }
 
-        // •¶š—ñ‚ğ•\¦
+        // æ–‡å­—åˆ—ã‚’è¡¨ç¤º
         DisplayNextSentence();
     }
 
     public void DisplayNextSentence()
     {
 
-        Debug.Log("DisplayNextSentence‚ªŒÄ‚Ño‚³‚ê‚Ü‚µ‚½");
+        Debug.Log("DisplayNextSentenceãŒå‘¼ã³å‡ºã•ã‚Œã¾ã—ãŸ");
 
-        Debug.Log("ƒZƒŠƒtƒLƒ…[ : " + sentences.Count);
+        Debug.Log("ã‚»ãƒªãƒ•ã‚­ãƒ¥ãƒ¼ : " + sentences.Count);
 
-        if (sentences.Count == 0)        // ƒZƒŠƒtƒLƒ…[‚ª0‚Ì‚Æ‚«
+        if (sentences.Count == 0)        // ã‚»ãƒªãƒ•ã‚­ãƒ¥ãƒ¼ãŒ0ã®ã¨ã
         {
 
-            Debug.Log("¨ ƒZƒŠƒtƒLƒ…[‚ª0");
+            Debug.Log("â†’ ã‚»ãƒªãƒ•ã‚­ãƒ¥ãƒ¼ãŒ0");
 
-            // ‰ï˜bI—¹
+            // ä¼šè©±çµ‚äº†
             EndDialog();
             return;
         }
@@ -137,19 +137,19 @@ public class DialogManager : MonoBehaviour
     public void EndDialog()
     {
 
-        Debug.Log("EndDialog() ‚ªŒÄ‚Î‚ê‚Ü‚µ‚½");
+        Debug.Log("EndDialog() ãŒå‘¼ã°ã‚Œã¾ã—ãŸ");
 
-        // ‰ï˜b—pUI‚ğ”ñ•\¦‚ÉA”ñ‰ï˜b’†‚É
+        // ä¼šè©±ç”¨UIã‚’éè¡¨ç¤ºã«ã€éä¼šè©±ä¸­ã«
         dialogUI.SetActive(false);
         isDialogActive = false;
 
-        // ƒvƒŒƒCƒ„[‚ÌˆÚ“®ƒƒbƒN‚ğ‰ğœ
-        if(currentPlayer != null && currentPlayer.TryGetComponent(out ThirdPersonController move))
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ç§»å‹•ãƒ­ãƒƒã‚¯ã‚’è§£é™¤
+        if (currentPlayer != null && currentPlayer.TryGetComponent(out ThirdPersonController move))
         {
             move.canMove = true;
         }
 
-        // ƒJƒƒ‰Ø‚è‘Ö‚¦
+        // ã‚«ãƒ¡ãƒ©åˆ‡ã‚Šæ›¿ãˆ
         if (mainCamera != null) mainCamera.enabled = true;
         if (dialogCamera != null) dialogCamera.enabled = false;
 
@@ -157,11 +157,11 @@ public class DialogManager : MonoBehaviour
 
     private void FaceEachOther(Transform player, Transform npc)
     {
-        // ƒvƒŒƒCƒ„[‚ªNPC‚ğŒü‚­ˆ—
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒNPCã‚’å‘ãå‡¦ç†
         Vector3 lookAtNPC = new Vector3(npc.position.x, player.position.y, npc.position.z);
         player.LookAt(lookAtNPC);
 
-        // NPC‚ªƒvƒŒƒCƒ„[‚ğŒü‚­ˆ—
+        // NPCãŒãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’å‘ãå‡¦ç†
         Vector3 lookAtPlayer = new Vector3(player.position.x, npc.position.y, player.position.z);
         npc.LookAt(lookAtPlayer);
     }
@@ -173,7 +173,7 @@ public class DialogManager : MonoBehaviour
 
         dialogCamera.transform.position = offsetPos;
 
-        // 2l‚Ì’†ŠÔ“_‚ğŒ©‰º‚ë‚·‚æ‚¤‚É‚·‚é
+        // 2äººã®ä¸­é–“ç‚¹ã‚’è¦‹ä¸‹ã‚ã™ã‚ˆã†ã«ã™ã‚‹
         Vector3 lookTarget = center + Vector3.up * lookHeight;
         dialogCamera.transform.LookAt(lookTarget);
     }

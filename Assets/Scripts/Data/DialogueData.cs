@@ -16,11 +16,6 @@ public class FlagCondition
     public bool mustBeTrue = true;
 }
 
-public enum ConversationSignalKind
-{
-    None, Scheduled, Available, Started, Custom
-}
-
 [System.Serializable]
 public class DialogueChoice
 {

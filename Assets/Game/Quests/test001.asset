@@ -15,9 +15,9 @@ MonoBehaviour:
   questId: Quest.Town01
   priority: 0
   stepEventIds:
-  - Town01.Talk
-  - Town01.GetApple
-  - Town01.Report
+  - Event.E1.Done
+  - Event.E2.Done
+  - Event.E3.Done
   goalTextKey: "\u306F\u3058\u3081\u3066\u306E\u96C6\u8377"
   rewardFlags:
   - Quest_Town01_Completed

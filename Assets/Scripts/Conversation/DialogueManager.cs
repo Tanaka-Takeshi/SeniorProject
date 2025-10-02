@@ -17,6 +17,10 @@ public class DialogueManager : MonoBehaviour
     [Tooltip("会話開始直後の入力ブロック時間(秒)")]
     public float inputBlockSec = 0.2f;
 
+    [Header("Routing (IDs)")]
+    [Tooltip("完了後に出す会話ID（例: Talk_Done）")]
+    public string doneId = "Talk_Done";
+
     private DialogueData current;
     private int index = 0;
     private float timeSinceStart = 0f;
@@ -35,6 +39,7 @@ public class DialogueManager : MonoBehaviour
     {
         currentNpc = npc;
 
+        // ★ NPC側のセレクタで開始IDを解決
         var selector = npc ? npc.GetComponentInParent<DialogueStartSelector>() : null;
         var startId = selector ? selector.ResolveId(id) : id;
 
@@ -58,7 +63,6 @@ public class DialogueManager : MonoBehaviour
             current.lines[index]
         );
     }
-
 
     void Update()
     {
@@ -88,40 +92,32 @@ public class DialogueManager : MonoBehaviour
             }
             else
             {
-                // === 最後に到達：選択肢 or 終了 ===
-                if (current != null && current.choices != null && current.choices.Length > 0)
+                // === 最後に到達：自動ルート or 選択肢 or 終了 ===
+                if (current != null)
                 {
-                    ShowFilteredChoices(current.choices);
-                }
-                else
-                {
-                    // ★ 1) autoRoutes があれば評価して自動遷移
-                    if (TryAutoRoute(current, out var nextIdAuto))
+                    // AutoRoute（任意）: 条件を満たす first nextId へ自動遷移
+                    if (TryAutoRoute(current, out var nextId) && !string.IsNullOrEmpty(nextId))
                     {
-                        var next = database?.Find(nextIdAuto);
+                        var next = database ? database.Find(nextId) : null;
                         if (next != null && next.lines != null && next.lines.Length > 0)
                         {
-                            // 今の会話を既読にしてから次へ
-                            MarkSeen(current);
-
                             current = next;
                             index = 0;
                             timeSinceStart = 0f;
-
                             cc.UpdateTitle(string.IsNullOrEmpty(current.speakerName) ? "NPC" : current.speakerName);
                             cc.ShowNextLine(current.lines[index]);
                             return;
                         }
-                        else
-                        {
-                            Debug.LogWarning($"[DM] AutoRoute nextId '{nextIdAuto}' not found or has no lines.");
-                        }
                     }
 
-                    // ★ 2) 自動遷移できなければ既読にして終了
-                    MarkSeen(current);
-                    cc.EndConversation();
+                    // 選択肢
+                    if (current.choices != null && current.choices.Length > 0)
+                    {
+                        ShowFilteredChoices(current.choices);
+                        return;
+                    }
                 }
+                cc.EndConversation();
             }
         }
     }
@@ -143,13 +139,13 @@ public class DialogueManager : MonoBehaviour
 
         timeSinceStart = 0f;
 
-        // ConversationController.ShowChoices(DialogueChoice[], Action<int>) を呼ぶ
         ConversationController.Instance.ShowChoices(
             visibleChoices.ToArray(),
             OnChoiceSelected
         );
     }
 
+    // --- AutoRoute（DialogueData 側の自動分岐） ---
     static bool TryAutoRoute(DialogueData data, out string nextId)
     {
         nextId = null;
@@ -164,8 +160,7 @@ public class DialogueManager : MonoBehaviour
         return false;
     }
 
-
-    // --- 条件判定（全て満たす必要あり） ---
+    // --- 条件判定（配列版） ---
     static bool PassConditions(FlagCondition[] conds)
     {
         if (conds == null || conds.Length == 0) return true;
@@ -179,13 +174,13 @@ public class DialogueManager : MonoBehaviour
         return true;
     }
 
+    // --- 条件判定（選択肢1件） ---
     static bool PassConditions(DialogueChoice c)
     {
         if (c.conditions == null || c.conditions.Length == 0) return true;
 
         foreach (var cond in c.conditions)
         {
-            // ★ enum 版：GameFlag.None は無視。その他は FlagService.Has で判定
             if (cond == null || cond.key == GameFlag.None) continue;
 
             bool has = FlagService.Has(cond.key);
@@ -209,7 +204,7 @@ public class DialogueManager : MonoBehaviour
 
         var choice = visibleChoices[visibleIndex];
 
-        // 1) フラグ操作（enum 版）
+        // 1) フラグ操作
         if (choice.flagOps != null)
         {
             foreach (var op in choice.flagOps)
@@ -226,16 +221,55 @@ public class DialogueManager : MonoBehaviour
             FlagService.Save();
         }
 
-        // 2) イベント発火（任意）
-        if (!string.IsNullOrEmpty(choice.eventSignalId) &&
-            choice.signalKind != ConversationSignalKind.None)
+        // 2) イベント発火（任意） + Hotfix（Start直接呼び）
+        if (!string.IsNullOrEmpty(choice.eventSignalId))
         {
             EventSignalRouter.Raise(choice.eventSignalId, choice.signalKind);
+
+            // --- 取りこぼし保険：Event.Start:<id> は StartEvent を直呼び ---
+            if (TryParseEventIdFromSignal(choice.eventSignalId, "Event.Start:", out var startEid))
+            {
+                EventProgressService.Instance?.StartEvent(startEid);
+                var stNow = EventProgressService.Instance ? EventProgressService.Instance.GetState(startEid) : EventRunState.Inactive;
+                Debug.Log($"[Probe] (DirectStart) {startEid} state now = {stNow}");
+            }
         }
 
+        // 2.5) ★Progress直後に「完了ならその場で Talk_Done へ即切替」
+        if (!string.IsNullOrEmpty(choice.eventSignalId)
+            && TryParseEventIdFromSignal(choice.eventSignalId, "Event.Progress:", out var progEid))
+        {
+            var eps = EventProgressService.Instance;
+            if (eps != null)
+            {
+                var st = eps.GetState(progEid);
+                var pr = eps.GetProgress(progEid);
+
+                // Completed または progress>=1.0 なら、この会話中に即 Done に切り替え
+                if (st == EventRunState.Completed || (st == EventRunState.Active && pr >= 1f))
+                {
+                    if (!string.IsNullOrEmpty(doneId) && database != null)
+                    {
+                        var done = database.Find(doneId);
+                        if (done != null && done.lines != null && done.lines.Length > 0)
+                        {
+                            current = done;
+                            index = 0;
+                            timeSinceStart = 0f;
+
+                            cc.UpdateTitle(string.IsNullOrEmpty(current.speakerName) ? "NPC" : current.speakerName);
+                            cc.ShowNextLine(current.lines[index]);
+                            return; // ★ ここで会話継続（終了しない）
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3) Seen マーク（任意）
         MarkSeen(current);
 
-        // 3) 次の会話へ or 終了
+        // 4) 通常の nextId ルート（完了していない場合はこちらに来る）
         if (database != null && !string.IsNullOrEmpty(choice.nextId))
         {
             var next = database.Find(choice.nextId);
@@ -254,6 +288,26 @@ public class DialogueManager : MonoBehaviour
         cc.EndConversation();
     }
 
+    // "Event.Start:<id>" / "Event.Progress:<id>:<delta>" から <id> を抜く
+    static bool TryParseEventIdFromSignal(string signal, string prefix, out string eventId)
+    {
+        eventId = null;
+        if (string.IsNullOrEmpty(signal) || string.IsNullOrEmpty(prefix)) return false;
+        if (!signal.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase)) return false;
+
+        var tail = signal.Substring(prefix.Length).Trim();
+        if (tail.Length > 0 && tail[0] == ':') tail = tail.Substring(1).Trim();
+
+        // Progress は "Event.Progress:Event.E1:+0.5" のように : 区切りが続く
+        var parts = tail.Split(':');
+        if (parts.Length >= 1 && !string.IsNullOrEmpty(parts[0]))
+        {
+            eventId = parts[0].Trim();
+            return true;
+        }
+        return false;
+    }
+
     void MarkSeen(DialogueData data)
     {
         if (data == null) return;
@@ -263,9 +317,6 @@ public class DialogueManager : MonoBehaviour
         {
             FlagService.Set(data.markSeenFlag);
             FlagService.Save();
-            // Debug.Log($"[DM] MarkSeen: {data.id} -> {data.markSeenFlag}");
         }
     }
-
-
 }

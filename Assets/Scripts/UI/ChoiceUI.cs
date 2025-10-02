@@ -146,11 +146,11 @@ public class ChoiceUI : MonoBehaviour
             var selected = EventSystem.current.currentSelectedGameObject;
             if (selected != null)
             {
-                Debug.Log("現在選択中のボタン: " + selected.name);
+                //Debug.Log("現在選択中のボタン: " + selected.name);
             }
             else
             {
-                Debug.Log("何も選択されていません");
+                //Debug.Log("何も選択されていません");
             }
         }
     }

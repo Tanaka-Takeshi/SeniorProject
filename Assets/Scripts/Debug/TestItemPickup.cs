@@ -1,37 +1,96 @@
-// Assets/Scripts/Dev/TestItemPickup.cs
+// Assets/Scripts/Debug/TestItemPickup.cs
 using UnityEngine;
 
 public class TestItemPickup : MonoBehaviour
 {
-    [Header("Test Item Pickup")]
-    [Tooltip("送信する eventId (QuestData.stepEventIds と一致させる)")]
-    public string eventId = "Town01.GetApple";
+    public enum Mode { SetFlag, AddProgress }
 
-    [Tooltip("押したら入手扱いにするキー")]
-    public KeyCode key = KeyCode.G;
+    [System.Serializable]
+    public class Entry
+    {
+        [Header("Key & What to do")]
+        public KeyCode key = KeyCode.G;
+        public Mode mode = Mode.SetFlag;
+
+        [Header("When mode = SetFlag")]
+        public GameFlag flag = GameFlag.None;   // 例: Item_E1Apple / Item_E2Apple
+        [Tooltip("SetFlag 実行後に進捗も加算する場合は ON")]
+        public bool alsoAddProgress = false;
+        public string alsoEventId = "Event.E1";
+        public float alsoDelta = 0.5f;
+
+        [Header("When mode = AddProgress (dev cheat)")]
+        public string eventId = "Event.E1";
+        public float delta = 0.5f;
+
+        [Header("Toast/Label (任意)")]
+        public string label = "";               // トーストに出す表示名
+    }
+
+    [Header("Entries (複数キーを並べられます)")]
+    public Entry[] entries;
+
+    [Header("UI/Debug")]
+    public bool showToast = true;
+    public bool logToConsole = true;
 
     void Update()
     {
-        if (Input.GetKeyDown(key))
+        if (entries == null) return;
+
+        foreach (var e in entries)
         {
-            // ① 入手フラグをON（インベントリ代替）
-            FlagService.Set(GameFlag.HasApple);
-            FlagService.Save();
+            if (e == null) continue;
+            if (Input.GetKeyDown(e.key))
+            {
+                switch (e.mode)
+                {
+                    case Mode.SetFlag:
+                        DoSetFlag(e);
+                        break;
 
-            // ② 見た目の確認用トースト（任意）
-            QuestService.Instance?.toastHud?.ShowToast($"アイテム入手：{Readable(eventId)}");
-
-            // ③ クエスト進行へ通知（現在の要求ステップと一致していれば進む）
-            EventSignalRouter.Raise(eventId, ConversationSignalKind.Started);
-
-            Debug.Log($"[TestItemPickup] Sent eventId='{eventId}' (HasApple=true)");
+                    case Mode.AddProgress:
+                        DoAddProgress(e.eventId, e.delta);
+                        break;
+                }
+            }
         }
     }
 
-    string Readable(string id)
+    void DoSetFlag(Entry e)
     {
-        // "Town01.GetApple" → "GetApple"
-        var i = id.LastIndexOf('.');
-        return i >= 0 && i < id.Length - 1 ? id.Substring(i + 1) : id;
+        if (e.flag == GameFlag.None)
+        {
+            if (logToConsole) Debug.LogWarning("[TestItemPickup] SetFlag mode but flag is None.");
+            return;
+        }
+
+        FlagService.Set(e.flag);
+        FlagService.Save();
+
+        if (showToast)
+            QuestService.Instance?.toastHud?.ShowToast(
+                string.IsNullOrEmpty(e.label) ? $"Flag ON: {e.flag}" : $"{e.label} 入手");
+
+        if (logToConsole) Debug.Log($"[TestItemPickup] Flag ON -> {e.flag}");
+
+        if (e.alsoAddProgress)
+            DoAddProgress(e.alsoEventId, e.alsoDelta);
+    }
+
+    void DoAddProgress(string eventId, float delta)
+    {
+        if (string.IsNullOrWhiteSpace(eventId))
+        {
+            if (logToConsole) Debug.LogWarning("[TestItemPickup] AddProgress: eventId is empty.");
+            return;
+        }
+
+        EventProgressService.Instance?.AddProgress(eventId, delta);
+
+        if (showToast)
+            QuestService.Instance?.toastHud?.ShowToast($"進捗 +{delta} → {eventId}");
+
+        if (logToConsole) Debug.Log($"[TestItemPickup] AddProgress +{delta} to {eventId}");
     }
 }
